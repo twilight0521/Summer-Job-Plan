@@ -1,0 +1,39 @@
+{
+  "passives": [
+    {
+      "id": "passive_early_bird",
+      "name": "早起的鸟儿",
+      "cost": 20,
+      "description": "早班工资 +20%，体力上限 +5。",
+      "effects": { "flags.passive_early_bird": true }
+    },
+    {
+      "id": "passive_tough_body",
+      "name": "铁打的身体",
+      "cost": 25,
+      "description": "重体力工作的受伤概率显著降低。",
+      "effects": { "flags.passive_tough_body": true }
+    },
+    {
+      "id": "passive_scholar",
+      "name": "学霸模式",
+      "cost": 20,
+      "description": "自习与数学学习收益 +1。",
+      "effects": { "flags.passive_scholar": true }
+    },
+    {
+      "id": "passive_social",
+      "name": "社交达人",
+      "cost": 15,
+      "description": "社交时心情额外 +3，关系更容易提升。",
+      "effects": { "flags.passive_social": true }
+    },
+    {
+      "id": "passive_frugal",
+      "name": "精打细算",
+      "cost": 15,
+      "description": "购买物品享受 8 折。",
+      "effects": { "flags.passive_frugal": true }
+    }
+  ]
+}

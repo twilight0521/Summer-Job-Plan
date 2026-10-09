@@ -1,0 +1,67 @@
+{
+  "items": [
+    {
+      "id": "protective_gear",
+      "name": "护具",
+      "price": 60,
+      "tags": ["work_safety"],
+      "description": "搬砖时降低受伤概率，硬干时更安全。",
+      "effects": { "flags.has_protective_gear": true },
+      "consumable": false
+    },
+    {
+      "id": "stationery",
+      "name": "文具套装",
+      "price": 15,
+      "tags": ["exam"],
+      "description": "考试时携带可获得少量加成。",
+      "effects": { "flags.has_stationery": true },
+      "consumable": false
+    },
+    {
+      "id": "energy_drink",
+      "name": "功能饮料",
+      "price": 8,
+      "tags": ["consumable"],
+      "description": "立刻恢复少量体力，但会增加一点疲劳。",
+      "effects": { "energy": 15, "fatigue": 5 },
+      "consumable": true
+    },
+    {
+      "id": "breakfast_bun",
+      "name": "包子",
+      "price": 5,
+      "tags": ["consumable", "food"],
+      "description": "便宜管饱，饥饿 -20。",
+      "effects": { "hunger": -20, "mood": 1 },
+      "consumable": true
+    },
+    {
+      "id": "clothes",
+      "name": "新衣服",
+      "price": 120,
+      "tags": ["social"],
+      "description": "穿上心情变好，社交事件结果更积极。",
+      "effects": { "mood": 8, "flags.has_new_clothes": true },
+      "consumable": false
+    },
+    {
+      "id": "reference_book",
+      "name": "教辅书",
+      "price": 45,
+      "tags": ["study"],
+      "description": "之后自习效率提升。",
+      "effects": { "flags.has_reference_book": true, "study": 2 },
+      "consumable": false
+    },
+    {
+      "id": "gift_snack",
+      "name": "伴手礼",
+      "price": 20,
+      "tags": ["social", "consumable"],
+      "description": "送给朋友，关系提升。",
+      "effects": { "flags.has_gift": true },
+      "consumable": true
+    }
+  ]
+}

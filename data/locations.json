@@ -1,0 +1,94 @@
+{
+  "locations": [
+    {
+      "id": "home",
+      "name": "家",
+      "description": "熟悉的小房间，能睡觉、吃饭，也能和父母说说话。",
+      "open_minutes": [0, 1440],
+      "tags": ["rest", "family"],
+      "map_pos": [40, 96],
+      "actions": ["study_home", "eat_home", "rest", "sleep", "talk_mom", "tutor_shift"],
+      "event_pool": ["home_01", "home_02"]
+    },
+    {
+      "id": "breakfast_shop",
+      "name": "早餐店",
+      "description": "天没亮就飘着油烟味，老周正忙着揉面。",
+      "open_minutes": [180, 600],
+      "tags": ["food", "work"],
+      "map_pos": [96, 60],
+      "actions": ["eat_breakfast", "breakfast_shift"],
+      "event_pool": ["breakfast_01"]
+    },
+    {
+      "id": "convenience_store",
+      "name": "便利店",
+      "description": "24 小时亮着灯，什么都能买到一点。",
+      "open_minutes": [0, 1440],
+      "tags": ["shop", "food"],
+      "map_pos": [152, 60],
+      "actions": ["eat_convenience", "buy_item", "lottery"],
+      "event_pool": ["store_01"]
+    },
+    {
+      "id": "tea_shop",
+      "name": "奶茶店",
+      "description": "音乐声、封口机声和排队的客人混在一起。",
+      "open_minutes": [600, 1320],
+      "tags": ["work", "social"],
+      "map_pos": [208, 96],
+      "actions": ["tea_shop_shift", "socialize", "buy_item"],
+      "event_pool": ["tea_01", "tea_02"]
+    },
+    {
+      "id": "library",
+      "name": "图书馆",
+      "description": "空调很足，安静得能听见翻页声。",
+      "open_minutes": [540, 1260],
+      "tags": ["study"],
+      "map_pos": [264, 60],
+      "actions": ["study_library", "math_study", "take_exam"],
+      "event_pool": ["library_01"]
+    },
+    {
+      "id": "gym_park",
+      "name": "健身房 / 公园",
+      "description": "一边是器械声，一边是散步的老人和小孩。",
+      "open_minutes": [360, 1320],
+      "tags": ["exercise"],
+      "map_pos": [264, 132],
+      "actions": ["exercise"],
+      "event_pool": ["park_01"]
+    },
+    {
+      "id": "hardware_store",
+      "name": "五金建材店",
+      "description": "门口堆着水泥和瓷砖，老板正在打电话招人。",
+      "open_minutes": [480, 1140],
+      "tags": ["work", "shop"],
+      "map_pos": [152, 132],
+      "actions": ["construction_shift", "buy_item", "collect_scrap"],
+      "event_pool": ["hardware_01"]
+    },
+    {
+      "id": "bank_office",
+      "name": "银行 / 办公楼",
+      "description": "玻璃门后面是安静的柜台和贴着招聘启事的公告栏。",
+      "open_minutes": [540, 1020],
+      "tags": ["work", "formal"],
+      "map_pos": [96, 132],
+      "actions": ["accounting_shift", "apply_accounting", "take_exam"],
+      "event_pool": ["bank_01"]
+    },
+    {
+      "id": "commercial_street",
+      "name": "商业街",
+      "description": "人来人往，什么都有可能发生。",
+      "open_minutes": [600, 1320],
+      "tags": ["social", "street"],
+      "map_pos": [208, 132],
+      "actions": ["stroll", "socialize", "buy_item", "collect_scrap", "lottery"],
+      "event_pool": ["street_01", "street_02", "street_03"]
+    }
+  ]
+}

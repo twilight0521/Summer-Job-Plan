@@ -1,0 +1,922 @@
+{
+  "events": [
+    {
+      "id": "home_01",
+      "category": "normal",
+      "title": "妈妈的唠叨",
+      "text": "妈妈一边收碗一边问：“这个暑假就打算一直躺着？隔壁小周都去他舅舅厂里了。”你张了张嘴，不知道从哪说起。",
+      "days": [1, 59],
+      "time": { "from": "07:00", "to": "23:00" },
+      "location": "home",
+      "once": true,
+      "weight": 10,
+      "choices": [
+        { "id": "a", "text": "老实说想打工攒钱", "result_text": "妈妈愣了一下，说“有计划就好”。", "effects": { "mood": 3 }, "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 3 }] },
+        { "id": "b", "text": "顶嘴说别管我", "result_text": "气氛冷了下来，妈妈没再说话。", "effects": { "mood": -4 }, "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": -5 }, { "path": "player.trust", "op": "add", "value": -2 }] },
+        { "id": "c", "text": "沉默着回房间", "result_text": "你听见她在客厅叹了口气。", "effects": { "mood": -2 } }
+      ]
+    },
+    {
+      "id": "home_02",
+      "category": "normal",
+      "title": "坏掉的旧风扇",
+      "text": "房间里的旧风扇开始发出咔哒声。爸爸说要不你试试看能不能修，修不好就凑合过这个夏天。",
+      "days": [4, 59],
+      "time": { "from": "08:00", "to": "22:00" },
+      "location": "home",
+      "once": true,
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "拆开研究一下", "result_text": "你居然把它修好了，动手能力 +1。", "effects": { "skill": 2, "energy": -8, "mood": 4 }, "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 2 }] },
+        { "id": "b", "text": "直接说不会修", "result_text": "爸爸说那算了，改天找师傅。", "effects": { "mood": -1 } }
+      ]
+    },
+    {
+      "id": "breakfast_01",
+      "category": "normal",
+      "title": "老周的试探",
+      "text": "老周边擦桌子边打量你：“小伙子，想不想来店里帮忙？起得早不早，我一眼就能看出来。”",
+      "days": [1, 30],
+      "time": { "from": "03:00", "to": "10:00" },
+      "location": "breakfast_shop",
+      "once": true,
+      "weight": 12,
+      "choices": [
+        { "id": "a", "text": "拍胸脯保证能早起", "result_text": "老周笑了：“那就看你表现。”", "effects": { "responsibility": 1, "mood": 2 }, "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": 4 }] },
+        { "id": "b", "text": "说先考虑考虑", "result_text": "老周点点头，没多说。", "effects": {}, "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": -1 }] }
+      ]
+    },
+    {
+      "id": "store_01",
+      "category": "normal",
+      "title": "临期食品打折",
+      "text": "店员正在给临期面包贴半价标签。“要的话抓紧，一会儿就没了。”",
+      "days": [1, 59],
+      "time": { "from": "18:00", "to": "23:00" },
+      "location": "convenience_store",
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "买两个当明天早饭", "result_text": "你省下了一顿饭钱。", "effects": { "money": -6, "hunger": -20, "mood": 2 } },
+        { "id": "b", "text": "算了，不差这点", "result_text": "你空着手走出店门。", "effects": {} }
+      ]
+    },
+    {
+      "id": "tea_01",
+      "category": "normal",
+      "title": "排队高峰",
+      "text": "下午茶时间，队伍排到了门口。店长一边打包一边朝你喊：“手快点，别让客人等！”",
+      "days": [1, 59],
+      "time": { "from": "14:00", "to": "18:00" },
+      "location": "tea_shop",
+      "weight": 10,
+      "choices": [
+        { "id": "a", "text": "咬牙撑住，加快节奏", "result_text": "你忙得满头汗，但撑下来了。", "effects": { "money": 20, "energy": -10, "communication": 1 } },
+        { "id": "b", "text": "悄悄摸一会儿鱼", "result_text": "你躲进后厨缓了口气。", "effects": { "energy": 5, "mood": 2 }, "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+    {
+      "id": "tea_02",
+      "category": "normal",
+      "title": "顾客的特别要求",
+      "text": "一位顾客坚持要“三分糖但不要太甜”。你解释了两次，对方还是不满意。",
+      "days": [2, 59],
+      "time": { "from": "10:00", "to": "22:00" },
+      "location": "tea_shop",
+      "weight": 9,
+      "conditions": { "all": [{ "field": "player.communication", "op": "gte", "value": 38 }] },
+      "choices": [
+        { "id": "a", "text": "耐心再沟通一次", "result_text": "顾客最后满意地走了，还夸了你一句。", "effects": { "money": 15, "communication": 1, "mood": 3 } },
+        { "id": "b", "text": "请同事来处理", "result_text": "你松了口气，但同事撇了撇嘴。", "effects": { "mood": -3, "responsibility": -1 } }
+      ]
+    },
+    {
+      "id": "library_01",
+      "category": "normal",
+      "title": "安静的座位",
+      "text": "靠窗的位置空着，但旁边坐着一个一直在抖腿的人。你犹豫要不要换座。",
+      "days": [1, 59],
+      "time": { "from": "09:00", "to": "21:00" },
+      "location": "library",
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "戴上耳机专注学习", "result_text": "你进入了状态。", "effects": { "study": 2, "mood": -2 } },
+        { "id": "b", "text": "换个角落的位置", "result_text": "安静是安静了，就是光线有点暗。", "effects": { "study": 1, "mood": 1 } }
+      ]
+    },
+    {
+      "id": "park_01",
+      "category": "normal",
+      "title": "晨跑的老人",
+      "text": "一位每天晨跑的大爷冲你竖起大拇指：“小伙子，能坚持就是本事。”",
+      "days": [1, 59],
+      "time": { "from": "06:00", "to": "09:00" },
+      "location": "gym_park",
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "陪他跑完这一圈", "result_text": "你累得直喘，但心情很好。", "effects": { "fitness": 2, "energy": -8, "mood": 4 } },
+        { "id": "b", "text": "礼貌笑笑继续自己的训练", "result_text": "你按自己的节奏练完了。", "effects": { "fitness": 1 } }
+      ]
+    },
+    {
+      "id": "hardware_01",
+      "category": "normal",
+      "title": "工地招工传单",
+      "text": "五金店门口贴着一张皱巴巴的传单：“急招搬运工，日结，能吃苦的来。”",
+      "days": [1, 45],
+      "time": { "from": "08:00", "to": "18:00" },
+      "location": "hardware_store",
+      "once": true,
+      "weight": 10,
+      "choices": [
+        { "id": "a", "text": "撕下传单收好", "result_text": "你把传单塞进口袋，多了条门路。", "effects": { "mood": 1 }, "extra": [{ "path": "flags.has_job_lead", "op": "set", "value": true }] },
+        { "id": "b", "text": "看一眼就走", "result_text": "你摇摇头，这种活太累了。", "effects": {} }
+      ]
+    },
+    {
+      "id": "bank_01",
+      "category": "normal",
+      "title": "公告栏的招聘启事",
+      "text": "银行大厅的公告栏上贴着“暑期财务实习生”招聘启事，要求写着“数学良好、责任心强”。",
+      "days": [10, 55],
+      "time": { "from": "09:00", "to": "17:00" },
+      "location": "bank_office",
+      "once": true,
+      "weight": 9,
+      "choices": [
+        { "id": "a", "text": "记下要求，回去准备", "result_text": "你意识到数学和责任感缺一不可。", "effects": { "mood": 2 }, "extra": [{ "path": "flags.knows_accounting", "op": "set", "value": true }] },
+        { "id": "b", "text": "觉得自己没戏", "result_text": "你转身离开，有点泄气。", "effects": { "mood": -2 } }
+      ]
+    },
+    {
+      "id": "normal_11",
+      "category": "normal",
+      "title": "邻居搬家",
+      "text": "楼下邻居搬家，问你能不能搭把手搬几个箱子，说给点辛苦费。",
+      "days": [2, 59],
+      "time": { "from": "08:00", "to": "20:00" },
+      "location": null,
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "帮忙搬", "result_text": "邻居塞给你五十块，还留了联系方式。", "effects": { "money": 50, "energy": -12, "fitness": 1 }, "extra": [{ "path": "player.trust", "op": "add", "value": 3 }] },
+        { "id": "b", "text": "说自己有事", "result_text": "邻居点点头，转身继续忙。", "effects": {} }
+      ]
+    },
+    {
+      "id": "normal_12",
+      "category": "normal",
+      "title": "手机欠费",
+      "text": "手机突然停机了，一查是流量超了。运营商的短信语气很客气，金额很不客气。",
+      "days": [3, 59],
+      "time": { "from": "08:00", "to": "23:00" },
+      "location": null,
+      "once": true,
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "充值续上", "result_text": "世界重新连通了。", "effects": { "money": -30, "mood": 1 } },
+        { "id": "b", "text": "先放着，反正也没人找我", "result_text": "你有点不安，但决定省下这笔钱。", "effects": { "mood": -3 } }
+      ]
+    },
+    {
+      "id": "normal_13",
+      "category": "normal",
+      "title": "同学群里的消息",
+      "text": "同学群里在晒各自的暑期安排，有人旅游，有人补课，还有人已经赚了两千。",
+      "days": [5, 59],
+      "time": { "from": "18:00", "to": "23:00" },
+      "location": null,
+      "once": true,
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "默默放下手机去学习", "result_text": "你把焦虑变成了动力。", "effects": { "study": 2, "mood": -2 } },
+        { "id": "b", "text": "发一句“羡慕了”", "result_text": "群里热闹了一阵，你也被逗笑了。", "effects": { "mood": 3, "communication": 1 } }
+      ]
+    },
+    {
+      "id": "normal_14",
+      "category": "normal",
+      "title": "暴雨天",
+      "text": "天气预报说今天有暴雨。出门办事的人都在屋檐下躲雨。",
+      "days": [3, 59],
+      "time": { "from": "12:00", "to": "20:00" },
+      "location": null,
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "冒雨继续行程", "result_text": "你浑身湿透，回家打了两个喷嚏。", "effects": { "health": -5, "mood": -2, "responsibility": 1 } },
+        { "id": "b", "text": "等雨停再走", "result_text": "雨停时天都黑了。", "effects": { "energy": -5 } }
+      ]
+    },
+    {
+      "id": "normal_15",
+      "category": "normal",
+      "title": "夜市小吃",
+      "text": "夜市飘来烤串和章鱼小丸子的香味，你的肚子不争气地叫了一声。",
+      "days": [2, 59],
+      "time": { "from": "18:00", "to": "23:00" },
+      "location": "commercial_street",
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "犒劳自己一顿", "result_text": "好吃，但钱包又瘪了点。", "effects": { "money": -25, "hunger": -35, "mood": 6 } },
+        { "id": "b", "text": "忍一忍回家吃", "result_text": "你咽了咽口水，快步走开。", "effects": { "mood": -3, "responsibility": 1 } }
+      ]
+    },
+    {
+      "id": "normal_16",
+      "category": "normal",
+      "title": "旧书店清仓",
+      "text": "巷子里的旧书店贴出“全场三折”，老板说下个月就关门了。",
+      "days": [5, 55],
+      "time": { "from": "10:00", "to": "20:00" },
+      "location": "commercial_street",
+      "once": true,
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "淘几本便宜书", "result_text": "你花小钱买到了几本不错的教辅。", "effects": { "money": -15, "study": 3, "mood": 3 } },
+        { "id": "b", "text": "只看看", "result_text": "你在书架间站了很久。", "effects": { "mood": 2 } }
+      ]
+    },
+    {
+      "id": "normal_17",
+      "category": "normal",
+      "title": "楼道里的争吵",
+      "text": "楼道里传来争吵声，好像是楼上的夫妻在为钱吵架。",
+      "days": [8, 59],
+      "time": { "from": "18:00", "to": "23:00" },
+      "location": "home",
+      "once": true,
+      "weight": 5,
+      "choices": [
+        { "id": "a", "text": "关上门装作没听见", "result_text": "你戴上耳机，心里却有点堵。", "effects": { "mood": -2 } },
+        { "id": "b", "text": "下楼散散步", "result_text": "夜风让你冷静了一些。", "effects": { "mood": 1, "energy": -4 } }
+      ]
+    },
+    {
+      "id": "normal_18",
+      "category": "normal",
+      "title": "社区志愿活动",
+      "text": "社区在招募志愿者整理捐赠物资，没有报酬，但管一顿饭。",
+      "days": [4, 59],
+      "time": { "from": "09:00", "to": "18:00" },
+      "location": null,
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "报名参加", "result_text": "你忙了一天，社区阿姨记住了你的名字。", "effects": { "energy": -15, "hunger": -20, "mood": 5 }, "extra": [{ "path": "player.trust", "op": "add", "value": 6 }] },
+        { "id": "b", "text": "没时间", "result_text": "你婉拒了。", "effects": {} }
+      ]
+    },
+    {
+      "id": "normal_19",
+      "category": "normal",
+      "title": "突然的胃疼",
+      "text": "半夜你被胃疼疼醒，大概是这几天吃饭太不规律了。",
+      "days": [6, 59],
+      "time": { "from": "00:00", "to": "06:00" },
+      "location": "home",
+      "conditions": { "all": [{ "field": "player.hunger", "op": "gte", "value": 60 }] },
+      "weight": 9,
+      "choices": [
+        { "id": "a", "text": "找点药吃，忍一忍", "result_text": "你翻出胃药，喝了口热水。", "effects": { "money": -10, "health": -4, "mood": -3 } },
+        { "id": "b", "text": "叫醒妈妈", "result_text": "妈妈忙前忙后，眼里全是担心。", "effects": { "health": 3, "mood": 2 }, "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 3 }] }
+      ]
+    },
+    {
+      "id": "normal_20",
+      "category": "normal",
+      "title": "深夜的自我怀疑",
+      "text": "凌晨一点，你躺在床上想：这个暑假过完，我真的会变得不一样吗？",
+      "days": [15, 59],
+      "time": { "from": "22:00", "to": "24:00" },
+      "location": null,
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "写下来，明天继续努力", "result_text": "你把想法记在手机备忘录里，踏实了一点。", "effects": { "mood": 3, "energy": -3 } },
+        { "id": "b", "text": "刷手机到更晚", "result_text": "你越刷越清醒，也越焦虑。", "effects": { "fatigue": 8, "mood": -3 } }
+      ]
+    },
+
+    {
+      "id": "tutor_trial",
+      "category": "normal",
+      "title": "家教的试讲机会",
+      "text": "家长群里有人问有没有大学生能辅导数学，说想先让孩子试听一次。你的成绩，好像够得着。",
+      "days": [5, 50],
+      "time": { "from": "12:00", "to": "20:00" },
+      "location": null,
+      "once": true,
+      "weight": 12,
+      "conditions": { "all": [{ "field": "player.study", "op": "gte", "value": 45 }] },
+      "choices": [
+        { "id": "a", "text": "去试讲一次", "result_text": "你讲得还算清楚，家长同意你以后来上课。", "effects": { "energy": -10, "communication": 1, "mood": 3 }, "extra": [{ "path": "flags.trial_lesson_done", "op": "set", "value": true }] },
+        { "id": "b", "text": "没把握，算了", "result_text": "你关掉手机，有点可惜。", "effects": { "mood": -2 } }
+      ]
+    },
+
+    {
+      "id": "npc_mom_01",
+      "category": "npc",
+      "npc": "mom",
+      "title": "妈妈问你打算",
+      "text": "妈妈坐到你床边：“这个暑假，你是想赚钱，还是想补功课？妈不是逼你，就是想心里有数。”",
+      "days": [1, 20],
+      "phase": 1,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "想先赚钱，减轻家里负担", "result_text": "妈妈眼睛亮了一下，又很快低下头。", "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 6 }, { "path": "player.responsibility", "op": "add", "value": 2 }] },
+        { "id": "b", "text": "想好好学习，考个好学校", "result_text": "妈妈松了口气：“那妈支持你。”", "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 5 }, { "path": "player.study", "op": "add", "value": 2 }] },
+        { "id": "c", "text": "还没想好", "result_text": "妈妈没说话，起身去厨房了。", "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+    {
+      "id": "npc_mom_02",
+      "category": "npc",
+      "npc": "mom",
+      "title": "妈妈发现你很累",
+      "text": "妈妈摸黑起来喝水，看见你房间灯还亮着。“别硬撑，身体垮了什么都没了。”",
+      "days": [16, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "听劝，今晚早点睡", "result_text": "你关掉灯，睡得格外沉。", "effects": { "fatigue": -12, "energy": 10 }, "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 4 }] },
+        { "id": "b", "text": "说没事，还能扛", "result_text": "妈妈摇摇头走了。", "effects": { "fatigue": 5 }, "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+    {
+      "id": "npc_mom_03",
+      "category": "npc",
+      "npc": "mom",
+      "title": "妈妈谈未来",
+      "text": "“不管这个暑假赚多少钱，”妈妈说，“妈更想知道你以后想成为什么样的人。”",
+      "days": [41, 59],
+      "phase": 3,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "说出自己的规划", "result_text": "妈妈认真听完，点了点头。", "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": 8 }, { "path": "player.mood", "op": "add", "value": 5 }] },
+        { "id": "b", "text": "含糊过去", "result_text": "妈妈叹了口气，没再追问。", "extra": [{ "path": "npcs.mom.relationship", "op": "add", "value": -3 }, { "path": "player.mood", "op": "add", "value": -3 }] }
+      ]
+    },
+
+    {
+      "id": "npc_zhou_01",
+      "category": "npc",
+      "npc": "boss_zhou",
+      "title": "老周问你能起多早",
+      "text": "“做早餐这行，比的就是谁起得早。”老周把一屉包子端出来，“你行不行？”",
+      "days": [1, 20],
+      "phase": 1,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "明天就来试", "result_text": "老周乐了：“有冲劲。”", "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": 6 }, { "path": "player.responsibility", "op": "add", "value": 1 }] },
+        { "id": "b", "text": "问工资怎么算", "result_text": "老周觉得你挺实在。", "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": 2 }] }
+      ]
+    },
+    {
+      "id": "npc_zhou_02",
+      "category": "npc",
+      "npc": "boss_zhou",
+      "title": "店里缺人手",
+      "text": "“小张请假了，这两天你要是能多顶一班，我给你加钱。”老周的语气像是商量，又像是考验。",
+      "days": [16, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "答应多顶一班", "result_text": "你累得够呛，但老周记住了你。", "effects": { "money": 60, "energy": -15, "fatigue": 10 }, "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": 7 }] },
+        { "id": "b", "text": "说自己实在排不开", "result_text": "老周脸色淡了些。", "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": -3 }] }
+      ]
+    },
+    {
+      "id": "npc_zhou_03",
+      "category": "npc",
+      "npc": "boss_zhou",
+      "title": "老周要写推荐",
+      "text": "“干了一个多月，你这孩子还行。”老周难得夸人，“要不要我给你写封推荐信？”",
+      "days": [41, 59],
+      "phase": 3,
+      "once": true,
+      "weight": 20,
+      "conditions": { "all": [{ "field": "npcs.boss_zhou.relationship", "op": "gte", "value": 55 }] },
+      "choices": [
+        { "id": "a", "text": "郑重道谢收下", "result_text": "这封信以后或许用得上。", "extra": [{ "path": "flags.has_recommendation", "op": "set", "value": true }, { "path": "player.trust", "op": "add", "value": 5 }, { "path": "player.mood", "op": "add", "value": 5 }] },
+        { "id": "b", "text": "不好意思地拒绝", "result_text": "老周笑笑：“随你。”", "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+
+    {
+      "id": "npc_lin_01",
+      "category": "npc",
+      "npc": "lin_xiaoyu",
+      "title": "林晓雨约你逛街",
+      "text": "“喂，暑假总不能天天打工吧？”林晓雨发来消息，“陪我去趟商业街，请你喝奶茶。”",
+      "days": [1, 20],
+      "phase": 1,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "答应，一起去", "result_text": "你们聊了一下午，很久没这么轻松了。", "effects": { "money": -15, "mood": 8, "energy": -5 }, "extra": [{ "path": "npcs.lin_xiaoyu.relationship", "op": "add", "value": 7 }] },
+        { "id": "b", "text": "说要打工没空", "result_text": "她回了个“好吧”，后面跟着一个句号。", "extra": [{ "path": "npcs.lin_xiaoyu.relationship", "op": "add", "value": -4 }] }
+      ]
+    },
+    {
+      "id": "npc_lin_02",
+      "category": "npc",
+      "npc": "lin_xiaoyu",
+      "title": "林晓雨看出你心事",
+      "text": "“你最近话变少了。”她盯着你看，“是不是有什么事憋着？”",
+      "days": [16, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "把烦恼都说出来", "result_text": "她安静地听着，偶尔点头。", "effects": { "mood": 10 }, "extra": [{ "path": "npcs.lin_xiaoyu.relationship", "op": "add", "value": 8 }] },
+        { "id": "b", "text": "笑着说没事", "result_text": "她将信将疑，但没再逼你。", "effects": { "mood": -2 }, "extra": [{ "path": "npcs.lin_xiaoyu.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+    {
+      "id": "npc_lin_03",
+      "category": "npc",
+      "npc": "lin_xiaoyu",
+      "title": "林晓雨的认真问题",
+      "text": "“暑假快结束了。”她忽然问，“以后我们还会像现在这样吗？”",
+      "days": [41, 59],
+      "phase": 3,
+      "once": true,
+      "weight": 20,
+      "conditions": { "all": [{ "field": "npcs.lin_xiaoyu.relationship", "op": "gte", "value": 55 }] },
+      "choices": [
+        { "id": "a", "text": "认真回答会", "result_text": "她笑了，笑得很好看。", "effects": { "mood": 8 }, "extra": [{ "path": "npcs.lin_xiaoyu.relationship", "op": "add", "value": 8 }, { "path": "flags.lin_key_done", "op": "set", "value": true }] },
+        { "id": "b", "text": "打岔换话题", "result_text": "她的笑淡了一点。", "effects": { "mood": -3 }, "extra": [{ "path": "npcs.lin_xiaoyu.relationship", "op": "add", "value": -3 }] }
+      ]
+    },
+
+    {
+      "id": "npc_chen_01",
+      "category": "npc",
+      "npc": "teacher_chen",
+      "title": "陈老师问你看书了吗",
+      "text": "“暑假最容易把人拉开差距。”陈老师递给你一张书单，“想学，随时来图书馆找我。”",
+      "days": [1, 20],
+      "phase": 1,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "收下书单，说会去", "result_text": "陈老师满意地点点头。", "extra": [{ "path": "npcs.teacher_chen.relationship", "op": "add", "value": 6 }, { "path": "player.study", "op": "add", "value": 1 }] },
+        { "id": "b", "text": "客气地推辞", "result_text": "陈老师没多说什么。", "extra": [{ "path": "npcs.teacher_chen.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+    {
+      "id": "npc_chen_02",
+      "category": "npc",
+      "npc": "teacher_chen",
+      "title": "陈老师在意数学",
+      "text": "“数学是很多机会的门槛。”陈老师翻了翻你的练习，“你其实不笨，就是不够扎实。”",
+      "days": [16, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "请他给点方法", "result_text": "他讲了半小时，你受益匪浅。", "effects": { "math": 3, "energy": -5 }, "extra": [{ "path": "npcs.teacher_chen.relationship", "op": "add", "value": 5 }] },
+        { "id": "b", "text": "说自己学不进去", "result_text": "陈老师皱了皱眉。", "extra": [{ "path": "npcs.teacher_chen.relationship", "op": "add", "value": -3 }] }
+      ]
+    },
+    {
+      "id": "npc_chen_03",
+      "category": "npc",
+      "npc": "teacher_chen",
+      "title": "陈老师提到升学机会",
+      "text": "“有个暑期数学竞赛的推荐名额。”陈老师看着你，“如果你这阵子肯下功夫，我可以帮你争取。”",
+      "days": [41, 59],
+      "phase": 3,
+      "once": true,
+      "weight": 20,
+      "conditions": { "all": [{ "field": "player.math", "op": "gte", "value": 55 }] },
+      "choices": [
+        { "id": "a", "text": "争取这个机会", "result_text": "陈老师答应帮你报名。", "effects": { "mood": 6 }, "extra": [{ "path": "flags.contest_recommended", "op": "set", "value": true }, { "path": "npcs.teacher_chen.relationship", "op": "add", "value": 6 }] },
+        { "id": "b", "text": "觉得自己还不够格", "result_text": "陈老师有点惋惜。", "effects": { "mood": -2 }, "extra": [{ "path": "npcs.teacher_chen.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+
+    {
+      "id": "npc_akai_01",
+      "category": "npc",
+      "npc": "akai",
+      "title": "阿凯的神秘门路",
+      "text": "“兄弟，我认识个老板，活儿轻松钱还多。”阿凯压低声音，“就是有点擦边，你敢不敢？”",
+      "days": [1, 20],
+      "phase": 1,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "先听听是什么活", "result_text": "阿凯说得眉飞色舞，你留了个心眼。", "extra": [{ "path": "npcs.akai.relationship", "op": "add", "value": 5 }, { "path": "flags.knows_risky_job", "op": "set", "value": true }] },
+        { "id": "b", "text": "直接拒绝", "result_text": "阿凯耸耸肩：“胆小。”", "extra": [{ "path": "npcs.akai.relationship", "op": "add", "value": -3 }, { "path": "player.responsibility", "op": "add", "value": 1 }] }
+      ]
+    },
+    {
+      "id": "npc_akai_02",
+      "category": "npc",
+      "npc": "akai",
+      "title": "阿凯拉你干一票",
+      "text": "“今晚有个活儿，帮忙搬点货，现金结算，不问来路。”阿凯眼睛发亮，“来不来？”",
+      "days": [16, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "去，赚钱要紧", "result_text": "钱来得快，你心里却不太踏实。", "effects": { "money": 200, "energy": -20, "fatigue": 10 }, "extra": [{ "path": "player.luck", "op": "add", "value": -6 }, { "path": "player.trust", "op": "add", "value": -3 }, { "path": "flags.did_shady_job", "op": "set", "value": true }] },
+        { "id": "b", "text": "拒绝，这钱不敢赚", "result_text": "阿凯笑你死脑筋，但你自己心里踏实。", "effects": { "mood": 2 }, "extra": [{ "path": "npcs.akai.relationship", "op": "add", "value": -2 }, { "path": "player.responsibility", "op": "add", "value": 2 }] }
+      ]
+    },
+    {
+      "id": "npc_akai_03",
+      "category": "npc",
+      "npc": "akai",
+      "title": "阿凯出事了",
+      "text": "阿凯半夜给你打电话，声音发抖：“哥们，我摊上事了，能不能先借我点钱周转？”",
+      "days": [41, 59],
+      "phase": 3,
+      "once": true,
+      "weight": 20,
+      "choices": [
+        { "id": "a", "text": "借钱给他", "result_text": "他连声道谢，说一定还。", "effects": { "money": -100, "mood": -2 }, "extra": [{ "path": "npcs.akai.relationship", "op": "add", "value": 8 }, { "path": "flags.lent_akai_money", "op": "set", "value": true }] },
+        { "id": "b", "text": "让他自己想办法", "result_text": "电话那头沉默了几秒，挂断了。", "effects": { "mood": -3 }, "extra": [{ "path": "npcs.akai.relationship", "op": "add", "value": -6 }] }
+      ]
+    },
+
+    {
+      "id": "npc_cat_01",
+      "category": "npc",
+      "npc": "night_cat",
+      "title": "陌生人的私信",
+      "text": "深夜，一个叫“夜班猫”的账号给你发消息：“在找工作？我这边有个不出门的活儿，报酬不错。”",
+      "days": [16, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 12,
+      "conditions": { "all": [{ "field": "player.skill", "op": "gte", "value": 35 }] },
+      "choices": [
+        { "id": "a", "text": "回复，想了解", "result_text": "对方发来一个加密的文档和一句“欢迎”。", "effects": { "mood": 2 }, "extra": [{ "path": "flags.night_cat_contact", "op": "set", "value": true }, { "path": "npcs.night_cat.relationship", "op": "add", "value": 10 }] },
+        { "id": "b", "text": "当作诈骗，拉黑", "result_text": "你删掉了对话，但心里记下了这个名字。", "effects": {} }
+      ]
+    },
+    {
+      "id": "npc_cat_02",
+      "category": "npc",
+      "npc": "night_cat",
+      "title": "夜班猫的委托",
+      "text": "“有个数据标注的活儿，按件计费，时间自由。”夜班猫发来消息，“但要先通过一个小测试。”",
+      "days": [41, 59],
+      "phase": 3,
+      "once": true,
+      "weight": 15,
+      "conditions": { "all": [{ "flag": "night_cat_contact", "op": "eq", "value": true }] },
+      "choices": [
+        { "id": "a", "text": "接受测试", "result_text": "你花了整晚完成了测试，对方评价“合格”。", "effects": { "money": 120, "energy": -15, "skill": 3, "fatigue": 8 }, "extra": [{ "path": "flags.night_work_unlocked", "op": "set", "value": true }, { "path": "npcs.night_cat.relationship", "op": "add", "value": 10 }] },
+        { "id": "b", "text": "婉拒，太耗神了", "result_text": "夜班猫回了个“理解”。", "extra": [{ "path": "npcs.night_cat.relationship", "op": "add", "value": -4 }] }
+      ]
+    },
+    {
+      "id": "npc_cat_03",
+      "category": "npc",
+      "npc": "night_cat",
+      "title": "夜班猫约你见面",
+      "text": "“线上聊了这么久，见一面吧。”夜班猫发来一个地址，“有些事，当面说比较好。”",
+      "days": [50, 59],
+      "phase": 4,
+      "once": true,
+      "weight": 18,
+      "conditions": { "all": [{ "field": "npcs.night_cat.relationship", "op": "gte", "value": 35 }] },
+      "choices": [
+        { "id": "a", "text": "赴约", "result_text": "你见到了一个意想不到的人，也听到了一个意想不到的提议。", "effects": { "mood": 5 }, "extra": [{ "path": "flags.night_cat_met", "op": "set", "value": true }, { "path": "npcs.night_cat.relationship", "op": "add", "value": 15 }] },
+        { "id": "b", "text": "不去了，保持距离", "result_text": "对方没再回复。", "extra": [{ "path": "npcs.night_cat.relationship", "op": "add", "value": -8 }] }
+      ]
+    },
+
+    {
+      "id": "street_01",
+      "category": "street",
+      "title": "捡到钱包",
+      "text": "路边花坛里躺着一个鼓鼓的钱包，四下无人。你捡起来，能摸到里面厚厚的一沓钱和一张身份证。",
+      "days": [1, 59],
+      "time": { "from": "08:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 8,
+      "once": true,
+      "choices": [
+        { "id": "a", "text": "交给警察", "result_text": "警察登记了你的信息，失主后来还专程来道谢。", "effects": { "mood": 5 }, "extra": [{ "path": "player.trust", "op": "add", "value": 8 }, { "path": "player.luck", "op": "add", "value": 3 }, { "path": "flags.good_deeds", "op": "add", "value": 1 }] },
+        { "id": "b", "text": "想办法联系失主", "result_text": "失主赶来，塞给你两百块感谢费。", "effects": { "money": 200, "mood": 3 }, "extra": [{ "path": "player.trust", "op": "add", "value": 6 }, { "path": "flags.good_deeds", "op": "add", "value": 1 }] },
+        { "id": "c", "text": "偷偷留下", "result_text": "你把钱揣进兜里，一路上不敢回头。", "effects": { "money": 600, "mood": -5 }, "extra": [{ "path": "player.trust", "op": "add", "value": -12 }, { "path": "player.luck", "op": "add", "value": -5 }, { "path": "flags.wallet_kept", "op": "set", "value": true }] }
+      ]
+    },
+    {
+      "id": "street_02",
+      "category": "street",
+      "title": "路边的乞讨者",
+      "text": "一个衣衫褴褛的老人坐在天桥下，面前放着一个掉了漆的搪瓷缸。",
+      "days": [1, 59],
+      "time": { "from": "08:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "给 ¥5", "result_text": "老人抬头冲你笑了笑。", "effects": { "money": -5, "mood": 3 }, "extra": [{ "path": "player.trust", "op": "add", "value": 2 }] },
+        { "id": "b", "text": "给他买个面包", "result_text": "老人接过面包，反复说着谢谢。", "effects": { "money": -8, "mood": 5 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }, { "path": "flags.helped_beggar", "op": "set", "value": true }] },
+        { "id": "c", "text": "径直走开", "result_text": "你加快脚步，心里有点不是滋味。", "effects": { "mood": -2 } }
+      ]
+    },
+    {
+      "id": "street_03",
+      "category": "street",
+      "title": "街头求助",
+      "text": "一个抱着大箱子的女生叫住你：“同学，能帮我搬到对面楼吗？我一个人实在搬不动。”",
+      "days": [1, 59],
+      "time": { "from": "08:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 9,
+      "choices": [
+        { "id": "a", "text": "帮她搬", "result_text": "她非要请你喝瓶水，还留了联系方式。", "effects": { "energy": -8, "mood": 4, "fitness": 1 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }, { "path": "flags.good_deeds", "op": "add", "value": 1 }] },
+        { "id": "b", "text": "说赶时间", "result_text": "她道了谢，转身继续等别人。", "effects": {} }
+      ]
+    },
+    {
+      "id": "street_04",
+      "category": "street",
+      "title": "可疑的碰瓷",
+      "text": "一个人突然倒在你脚边，捂着腿喊疼：“你撞人了！赔钱！”你确定自己根本没碰到他。",
+      "days": [3, 59],
+      "time": { "from": "10:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "立刻报警", "result_text": "那人见势不妙，一瘸一拐地跑了。", "effects": { "mood": 3 }, "extra": [{ "path": "player.trust", "op": "add", "value": 5 }] },
+        { "id": "b", "text": "花钱私了", "result_text": "你掏了钱，越想越憋屈。", "effects": { "money": -150, "mood": -6 }, "extra": [{ "path": "player.luck", "op": "add", "value": -2 }] },
+        { "id": "c", "text": "反过来讹他", "result_text": "你演技不错，但围观的人眼神变了。", "effects": { "money": 100 }, "extra": [{ "path": "player.trust", "op": "add", "value": -10 }, { "path": "player.luck", "op": "add", "value": -6 }] }
+      ]
+    },
+    {
+      "id": "street_05",
+      "category": "street",
+      "title": "街头歌手",
+      "text": "一个抱着吉他的男生在街角唱歌，唱得不算好，但很认真。地上放着一个琴盒。",
+      "days": [1, 59],
+      "time": { "from": "14:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "投 ¥10 支持一下", "result_text": "他朝你点头致意，唱得更投入了。", "effects": { "money": -10, "mood": 4 } },
+        { "id": "b", "text": "站着听完一首", "result_text": "你难得地放空了十分钟。", "effects": { "mood": 3, "energy": -2 } }
+      ]
+    },
+    {
+      "id": "street_06",
+      "category": "street",
+      "title": "发传单的兼职",
+      "text": "一个大哥拦住你：“小伙子，帮个忙发两小时传单，给你五十，干不干？”",
+      "days": [1, 45],
+      "time": { "from": "10:00", "to": "18:00" },
+      "location": "commercial_street",
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "干，两小时五十块", "result_text": "太阳很晒，但钱到手了。", "effects": { "money": 50, "energy": -12, "hunger": 6, "communication": 1 } },
+        { "id": "b", "text": "拒绝", "result_text": "大哥转身去找下一个人。", "effects": {} }
+      ]
+    },
+    {
+      "id": "street_07",
+      "category": "street",
+      "title": "迷路的小孩",
+      "text": "一个小孩蹲在路边哭，说找不到妈妈了。周围没有大人。",
+      "days": [1, 59],
+      "time": { "from": "10:00", "to": "20:00" },
+      "location": "commercial_street",
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "陪他一起等，帮忙找", "result_text": "半小时后，孩子妈妈赶来，对你千恩万谢。", "effects": { "energy": -6, "mood": 6 }, "extra": [{ "path": "player.trust", "op": "add", "value": 6 }, { "path": "flags.good_deeds", "op": "add", "value": 1 }] },
+        { "id": "b", "text": "指个方向让他自己找", "result_text": "你有点不放心，但还是走开了。", "effects": { "mood": -2 } }
+      ]
+    },
+    {
+      "id": "street_08",
+      "category": "street",
+      "title": "促销抽奖",
+      "text": "商场门口在搞促销，消费满 ¥30 就能抽一次奖。奖池里有现金、优惠券，还有“谢谢参与”。",
+      "days": [1, 59],
+      "time": { "from": "10:00", "to": "21:00" },
+      "location": "commercial_street",
+      "weight": 7,
+      "choices": [
+        { "id": "a", "text": "凑单抽一次", "result_text": "你抽到了一张五折券。", "effects": { "money": -30, "mood": 3 } },
+        { "id": "b", "text": "看看就好", "result_text": "你对这种套路免疫。", "effects": {} }
+      ]
+    },
+    {
+      "id": "street_09",
+      "category": "street",
+      "title": "爆胎的电动车",
+      "text": "一位外卖小哥的电动车爆胎了，正蹲在路边干着急，手里还有三单没送。",
+      "days": [2, 59],
+      "time": { "from": "10:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "帮他把车推到修车铺", "result_text": "小哥连声道谢，硬塞给你二十块。", "effects": { "money": 20, "energy": -10, "fitness": 1 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }] },
+        { "id": "b", "text": "帮不上忙，走了", "result_text": "你听见他在后面叹气。", "effects": {} }
+      ]
+    },
+    {
+      "id": "street_10",
+      "category": "street",
+      "title": "摆摊的老同学",
+      "text": "你发现同班同学在夜市摆摊卖手机壳，看见你有点不好意思：“补贴点家用。”",
+      "days": [5, 59],
+      "time": { "from": "18:00", "to": "23:00" },
+      "location": "commercial_street",
+      "once": true,
+      "weight": 6,
+      "choices": [
+        { "id": "a", "text": "买一个支持他", "result_text": "他松了口气，跟你聊了很久。", "effects": { "money": -20, "mood": 4, "communication": 1 } },
+        { "id": "b", "text": "说自己也缺钱", "result_text": "你们相视苦笑，算是互相理解了。", "effects": { "mood": 2 } }
+      ]
+    },
+    {
+      "id": "street_11",
+      "category": "street",
+      "title": "流浪猫",
+      "text": "一只瘦瘦的橘猫蹲在墙根，看见你也不躲，只是轻轻叫了一声。",
+      "days": [1, 59],
+      "time": { "from": "08:00", "to": "22:00" },
+      "location": "commercial_street",
+      "weight": 5,
+      "choices": [
+        { "id": "a", "text": "买根火腿肠喂它", "result_text": "它吃得狼吞虎咽，蹭了蹭你的裤脚。", "effects": { "money": -5, "mood": 5 } },
+        { "id": "b", "text": "摸摸它的头就走", "result_text": "它目送你离开。", "effects": { "mood": 2 } }
+      ]
+    },
+    {
+      "id": "street_12",
+      "category": "street",
+      "title": "免费体检",
+      "text": "社区医院在街边设了个免费体检点，测血压、量身高，还送一盒创可贴。",
+      "days": [3, 59],
+      "time": { "from": "09:00", "to": "17:00" },
+      "location": "commercial_street",
+      "once": true,
+      "weight": 5,
+      "choices": [
+        { "id": "a", "text": "顺便检查一下", "result_text": "医生说你有点疲劳过度，让你多休息。", "effects": { "health": 3, "mood": 2 }, "extra": [{ "path": "flags.got_checkup", "op": "set", "value": true }] },
+        { "id": "b", "text": "不去了", "result_text": "你觉得自己还年轻。", "effects": {} }
+      ]
+    },
+
+    {
+      "id": "hidden_01",
+      "category": "hidden",
+      "title": "深夜的代练单",
+      "text": "夜班猫转来一条消息：“有人出高价找代练，通宵，只此一晚。接不接？”",
+      "days": [20, 55],
+      "time": { "from": "22:00", "to": "24:00" },
+      "location": null,
+      "weight": 10,
+      "conditions": { "all": [{ "flag": "night_cat_contact", "op": "eq", "value": true }] },
+      "choices": [
+        { "id": "a", "text": "接单，通宵干", "result_text": "天亮时你赚到一笔钱，眼睛却干得发疼。", "effects": { "money": 300, "energy": -30, "fatigue": 25, "health": -8, "skill": 2 }, "extra": [{ "path": "flags.did_night_work", "op": "set", "value": true }] },
+        { "id": "b", "text": "不接，身体要紧", "result_text": "你关掉手机，很快睡着了。", "effects": { "energy": 5 } }
+      ]
+    },
+    {
+      "id": "hidden_02",
+      "category": "hidden",
+      "title": "数据标注外包",
+      "text": "一个外包群在招数据标注员，按件计费。做完一批还有下一批，只是要一直盯着屏幕。",
+      "days": [25, 58],
+      "time": { "from": "20:00", "to": "24:00" },
+      "location": null,
+      "weight": 10,
+      "conditions": { "all": [{ "flag": "night_work_unlocked", "op": "eq", "value": true }] },
+      "choices": [
+        { "id": "a", "text": "接一批做", "result_text": "虽然枯燥，但收入稳定。", "effects": { "money": 150, "energy": -12, "fatigue": 8, "skill": 1 } },
+        { "id": "b", "text": "今天太累了", "result_text": "你决定放过自己。", "effects": {} }
+      ]
+    },
+    {
+      "id": "hidden_03",
+      "category": "hidden",
+      "title": "仓库夜班",
+      "text": "五金店老板私下问你：“晚上愿不愿意来看仓库？不累，就是熬人，工资翻倍。”",
+      "days": [18, 55],
+      "time": { "from": "22:00", "to": "24:00" },
+      "location": "hardware_store",
+      "weight": 8,
+      "conditions": { "all": [{ "field": "player.fitness", "op": "gte", "value": 45 }] },
+      "choices": [
+        { "id": "a", "text": "接下夜班", "result_text": "仓库很安静，你数着钟点熬到天亮。", "effects": { "money": 180, "energy": -20, "fatigue": 18, "health": -4 } },
+        { "id": "b", "text": "婉拒", "result_text": "老板说下次再找你。", "effects": {} }
+      ]
+    },
+    {
+      "id": "hidden_04",
+      "category": "hidden",
+      "title": "被追查的钱包",
+      "text": "你听说那天丢钱包的失主报了警，还调了监控。有人开始打听那天路过的人。",
+      "days": [10, 59],
+      "time": { "from": "08:00", "to": "22:00" },
+      "location": null,
+      "weight": 20,
+      "conditions": { "all": [{ "flag": "wallet_kept", "op": "eq", "value": true }] },
+      "choices": [
+        { "id": "a", "text": "主动还回去并道歉", "result_text": "失主虽然生气，但最终没有追究。", "effects": { "money": -400, "mood": 3 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }, { "path": "flags.wallet_kept", "op": "set", "value": false }] },
+        { "id": "b", "text": "装作不知道", "result_text": "你整晚都睡不踏实。", "effects": { "mood": -6, "health": -3 }, "extra": [{ "path": "player.trust", "op": "add", "value": -8 }, { "path": "player.luck", "op": "add", "value": -4 }] }
+      ]
+    },
+    {
+      "id": "hidden_05",
+      "category": "hidden",
+      "title": "夜班猫的真面目",
+      "text": "赴约后你才发现，夜班猫竟然是常来奶茶店的那个安静顾客。对方说想找个靠谱的人合伙做点小生意。",
+      "days": [52, 59],
+      "time": { "from": "18:00", "to": "23:00" },
+      "location": "tea_shop",
+      "weight": 20,
+      "conditions": { "all": [{ "flag": "night_cat_met", "op": "eq", "value": true }, { "field": "npcs.night_cat.relationship", "op": "gte", "value": 50 }] },
+      "choices": [
+        { "id": "a", "text": "答应一起做", "result_text": "你们聊到打烊，一个计划渐渐成形。", "effects": { "mood": 8, "money": -200 }, "extra": [{ "path": "flags.business_partner", "op": "set", "value": true }, { "path": "player.trust", "op": "add", "value": 5 }] },
+        { "id": "b", "text": "再考虑考虑", "result_text": "对方说“想好了随时找我”。", "effects": {} }
+      ]
+    },
+
+    {
+      "id": "job_customer_01",
+      "category": "job",
+      "title": "顾客的特别要求",
+      "text": "一位顾客坚持要“三分糖但不要太甜”。你解释了两次，对方还是不满意。",
+      "time": { "from": "10:00", "to": "22:00" },
+      "weight": 10,
+      "choices": [
+        { "id": "a", "text": "耐心沟通", "result_text": "顾客满意离开。", "effects": { "money": 30, "communication": 1, "mood": 3 } },
+        { "id": "b", "text": "请同事处理", "result_text": "你松了口气。", "effects": { "mood": -3, "responsibility": -1 } }
+      ]
+    },
+    {
+      "id": "job_customer_02",
+      "category": "job",
+      "title": "打翻的奶茶",
+      "text": "手一滑，一杯奶茶泼在了地上，排在后面的客人发出一阵抱怨。",
+      "time": { "from": "10:00", "to": "22:00" },
+      "weight": 8,
+      "choices": [
+        { "id": "a", "text": "马上道歉并重做", "result_text": "店长看在眼里，没扣你钱。", "effects": { "money": -10, "mood": -2, "responsibility": 1 } },
+        { "id": "b", "text": "先清理，假装没看见", "result_text": "有客人小声嘀咕了一句。", "effects": { "mood": -4, "trust": -2 } }
+      ]
+    },
+    {
+      "id": "job_breakfast_01",
+      "category": "job",
+      "title": "早班的困意",
+      "text": "凌晨的厨房里蒸汽腾腾，你站在灶台前，眼皮一直往下沉。",
+      "time": { "from": "03:00", "to": "07:00" },
+      "weight": 10,
+      "conditions": { "all": [{ "field": "player.fatigue", "op": "gte", "value": 40 }] },
+      "choices": [
+        { "id": "a", "text": "用冷水洗把脸硬撑", "result_text": "你撑到了下班，但头一直昏昏的。", "effects": { "health": -4, "mood": -3, "money": 20 } },
+        { "id": "b", "text": "跟老周请十分钟假歇一下", "result_text": "老周皱眉，但还是让你缓了缓。", "effects": { "energy": 8, "mood": 2 }, "extra": [{ "path": "npcs.boss_zhou.relationship", "op": "add", "value": -2 }] }
+      ]
+    },
+    {
+      "id": "job_construction_01",
+      "category": "job",
+      "title": "工地的意外",
+      "text": "一块砖从架子上滑下来，砸在你脚边。你吓出一身冷汗。",
+      "time": { "from": "08:00", "to": "18:00" },
+      "weight": 9,
+      "conditions": { "all": [{ "field": "player.muscle", "op": "lte", "value": 45 }] },
+      "choices": [
+        { "id": "a", "text": "小心一点继续干", "result_text": "你放慢了速度，安全熬到收工。", "effects": { "energy": -8, "mood": -2 } },
+        { "id": "b", "text": "找工头要个安全帽", "result_text": "工头给了你一顶，还夸你懂规矩。", "effects": { "money": -5 }, "extra": [{ "path": "player.trust", "op": "add", "value": 3 }] }
+      ]
+    },
+    {
+      "id": "job_tutor_01",
+      "category": "job",
+      "title": "学生不配合",
+      "text": "你辅导的学生把笔一扔：“我不想学了，学这些有什么用？”",
+      "time": { "from": "16:00", "to": "20:00" },
+      "weight": 9,
+      "choices": [
+        { "id": "a", "text": "换个方式讲，讲个故事", "result_text": "孩子听进去了，家长也很满意。", "effects": { "money": 30, "communication": 1, "mood": 3 } },
+        { "id": "b", "text": "严肃地批评他", "result_text": "孩子不说话了，气氛有点僵。", "effects": { "mood": -3, "responsibility": 1 } }
+      ]
+    },
+    {
+      "id": "job_accounting_01",
+      "category": "job",
+      "title": "对不上的账",
+      "text": "临下班时你发现有一笔账对不上，差了整整两百块。",
+      "time": { "from": "09:00", "to": "17:00" },
+      "weight": 10,
+      "choices": [
+        { "id": "a", "text": "留下来重新核对", "result_text": "你花了一个小时找出问题，主管对你刮目相看。", "effects": { "energy": -12, "responsibility": 2, "skill": 2, "mood": 2 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }] },
+        { "id": "b", "text": "明天再说", "result_text": "你按时下班，但那笔账一直悬在心里。", "effects": { "mood": -4, "responsibility": -1 } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "player": {
+    "id": "player",
+    "name": "我",
+    "portrait": "player",
+    "description": "准备用暑假打工的高中生。"
+  },
+  "characters": [
+    {
+      "id": "mom",
+      "name": "妈妈",
+      "portrait": "mom",
+      "role": "家庭",
+      "description": "关心你的出勤、健康和花钱方式，稳定路线的代表。",
+      "relationship": 60,
+      "initial_trust": 60,
+      "tags": ["family", "safe_route"],
+      "stages": [
+        {
+          "phase": 1,
+          "event_id": "npc_mom_01",
+          "hint": "她想知道你这个暑假到底想干嘛。"
+        },
+        {
+          "phase": 2,
+          "event_id": "npc_mom_02",
+          "hint": "她注意到你最近很累。"
+        },
+        {
+          "phase": 3,
+          "event_id": "npc_mom_03",
+          "hint": "她开始认真谈你的未来。"
+        }
+      ]
+    },
+    {
+      "id": "boss_zhou",
+      "name": "老周老板",
+      "portrait": "boss_zhou",
+      "role": "工作",
+      "description": "早餐店老板，最看重准时和肯不肯多干一点。",
+      "relationship": 40,
+      "initial_trust": 45,
+      "tags": ["work", "employer"],
+      "stages": [
+        {
+          "phase": 1,
+          "event_id": "npc_zhou_01",
+          "hint": "他想知道你能不能起得来。"
+        },
+        {
+          "phase": 2,
+          "event_id": "npc_zhou_02",
+          "hint": "店里缺人手，他在试探你。"
+        },
+        {
+          "phase": 3,
+          "event_id": "npc_zhou_03",
+          "hint": "他在考虑要不要给你写推荐。"
+        }
+      ]
+    },
+    {
+      "id": "lin_xiaoyu",
+      "name": "林晓雨",
+      "portrait": "lin_xiaoyu",
+      "role": "朋友",
+      "description": "同学兼朋友，偏向社交、情绪支持和自我表达。",
+      "relationship": 50,
+      "initial_trust": 50,
+      "tags": ["friend", "social"],
+      "stages": [
+        {
+          "phase": 1,
+          "event_id": "npc_lin_01",
+          "hint": "她想约你一起逛逛。"
+        },
+        {
+          "phase": 2,
+          "event_id": "npc_lin_02",
+          "hint": "她看出你心事很重。"
+        },
+        {
+          "phase": 3,
+          "event_id": "npc_lin_03",
+          "hint": "她准备聊一个认真的问题。"
+        }
+      ]
+    },
+    {
+      "id": "teacher_chen",
+      "name": "陈老师",
+      "portrait": "teacher_chen",
+      "role": "学习",
+      "description": "关注你的学习和升学，愿意为努力的人多说一句话。",
+      "relationship": 45,
+      "initial_trust": 50,
+      "tags": ["study", "mentor"],
+      "stages": [
+        {
+          "phase": 1,
+          "event_id": "npc_chen_01",
+          "hint": "他问你这个暑假有没有看书。"
+        },
+        {
+          "phase": 2,
+          "event_id": "npc_chen_02",
+          "hint": "他在意你的数学进度。"
+        },
+        {
+          "phase": 3,
+          "event_id": "npc_chen_03",
+          "hint": "他提到一个升学机会。"
+        }
+      ]
+    },
+    {
+      "id": "akai",
+      "name": "阿凯",
+      "portrait": "akai",
+      "role": "情报",
+      "description": "朋友，手里总有兼职情报和高风险赚钱机会。",
+      "relationship": 45,
+      "initial_trust": 40,
+      "tags": ["friend", "opportunity", "risky"],
+      "stages": [
+        {
+          "phase": 1,
+          "event_id": "npc_akai_01",
+          "hint": "他神秘兮兮地说有门路。"
+        },
+        {
+          "phase": 2,
+          "event_id": "npc_akai_02",
+          "hint": "他拉你干一票大的。"
+        },
+        {
+          "phase": 3,
+          "event_id": "npc_akai_03",
+          "hint": "他出了点事。"
+        }
+      ]
+    },
+    {
+      "id": "night_cat",
+      "name": "夜班猫",
+      "portrait": "night_cat",
+      "role": "隐藏",
+      "description": "神秘网友，连接特殊工作和隐藏结局。",
+      "relationship": 20,
+      "initial_trust": 30,
+      "tags": ["hidden", "online"],
+      "stages": [
+        {
+          "phase": 2,
+          "event_id": "npc_cat_01",
+          "hint": "一个陌生人给你发来消息。"
+        },
+        {
+          "phase": 3,
+          "event_id": "npc_cat_02",
+          "hint": "对方似乎知道很多。"
+        },
+        {
+          "phase": 4,
+          "event_id": "npc_cat_03",
+          "hint": "对方约你见面。"
+        }
+      ]
+    }
+  ]
+}

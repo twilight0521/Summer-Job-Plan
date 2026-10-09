@@ -1,0 +1,103 @@
+{
+  "endings": [
+    {
+      "id": "little_accountant",
+      "name": "小小会计师",
+      "priority": 100,
+      "tagline": "数字不会骗人，努力也不会。",
+      "description": "你通过了会计入门考试，完成了暑期财务实习。父母把这件事讲给了所有亲戚听，陈老师也难得地夸了你一句“有前途”。",
+      "conditions": {
+        "all": [
+          { "flag": "accounting_exam_passed", "op": "eq", "value": true },
+          { "flag": "accounting_hired", "op": "eq", "value": true },
+          { "field": "flags.accounting_shifts_done", "op": "gte", "value": 3 }
+        ]
+      },
+      "highlights": ["数学能力", "责任感", "会计实习"]
+    },
+    {
+      "id": "neighborhood_fame",
+      "name": "街坊都认识你",
+      "priority": 95,
+      "tagline": "这个暑假，你把名字留在了这条街上。",
+      "description": "你捡过钱包、帮过路人、陪迷路的孩子等过家长。街坊们未必记得你的名字，但都记得那个总愿意搭把手的少年。",
+      "conditions": {
+        "all": [
+          { "field": "player.trust", "op": "gte", "value": 80 },
+          { "field": "flags.good_deeds", "op": "gte", "value": 3 }
+        ]
+      },
+      "highlights": ["信任值", "助人事件", "街区口碑"]
+    },
+    {
+      "id": "skill_takeoff",
+      "name": "技能起飞",
+      "priority": 90,
+      "tagline": "你发现自己原来能学会很多东西。",
+      "description": "这个暑假你最大的收获不是钱，而是实打实的本事。无论是数学、维修还是数据技能，你都摸到了门道，也看到了更远的路。",
+      "conditions": {
+        "any": [
+          { "field": "player.skill", "op": "gte", "value": 70 },
+          { "field": "player.math", "op": "gte", "value": 75 },
+          { "field": "player.study", "op": "gte", "value": 75 }
+        ]
+      },
+      "highlights": ["技能", "学习", "证书"]
+    },
+    {
+      "id": "relationships_matter",
+      "name": "关系比钱重要",
+      "priority": 85,
+      "tagline": "钱可以再赚，有些人错过了就是错过了。",
+      "description": "你把大量时间花在了陪伴和倾听上。暑假结束时，你发现身边有几个真心对你好的人，这比存折上的数字更让你安心。",
+      "conditions": {
+        "all": [
+          { "field": "computed.count_high_relationship", "op": "gte", "value": 2 }
+        ]
+      },
+      "highlights": ["NPC 关系", "关键事件", "情感支持"]
+    },
+    {
+      "id": "first_bucket",
+      "name": "攒到第一桶金",
+      "priority": 80,
+      "tagline": "第一次靠自己攒下一笔钱。",
+      "description": "你把这个暑假的每一分钱都算得清清楚楚。虽然累，但当你看到账户余额时，第一次真切地感到自己长大了。",
+      "conditions": {
+        "all": [
+          { "field": "player.money", "op": "gte", "value": 2500 }
+        ]
+      },
+      "highlights": ["现金", "独立", "理财"]
+    },
+    {
+      "id": "steady_summer",
+      "name": "稳稳的暑假",
+      "priority": 50,
+      "tagline": "没有大起大落，但每一步都走得踏实。",
+      "description": "你按时上班、偶尔学习、也记得回家吃饭。这个暑假没有奇迹，却也没有遗憾。父母说，这样挺好。",
+      "conditions": {
+        "all": [
+          { "field": "player.responsibility", "op": "gte", "value": 50 },
+          { "field": "player.health", "op": "gte", "value": 60 },
+          { "field": "player.mood", "op": "gte", "value": 45 }
+        ]
+      },
+      "highlights": ["责任感", "健康", "家庭关系"]
+    },
+    {
+      "id": "summer_overload",
+      "name": "暑假过载",
+      "priority": 10,
+      "tagline": "你成功把自己熬成了一台快要报废的机器。",
+      "description": "这个暑假你几乎没停过，身体和情绪都在拉响警报。躺回床上的那一刻，你只想说一句：下次一定好好休息。",
+      "conditions": {
+        "any": [
+          { "field": "player.health", "op": "lte", "value": 35 },
+          { "field": "player.mood", "op": "lte", "value": 20 }
+        ]
+      },
+      "highlights": ["疲劳", "健康", "心情"]
+    }
+  ]
+}

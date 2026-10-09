@@ -1,0 +1,52 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
+[application]
+
+config/name="暑假工计划"
+config/description="在 60 天暑假里打工、学习、社交，走向不同的人生结局。"
+run/main_scene="res://scenes/boot/boot.tscn"
+config/features=PackedStringArray("4.7")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameConfig="*res://scripts/infrastructure/game_config.gd"
+ContentLoader="*res://scripts/infrastructure/content_loader.gd"
+RandomSource="*res://scripts/infrastructure/random_source.gd"
+SaveRepository="*res://scripts/infrastructure/save_repository.gd"
+GameFlow="*res://scripts/app/game_flow.gd"
+
+[display]
+
+window/size/viewport_width=640
+window/size/viewport_height=360
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+
+[file_customization]
+
+folder_colors={
+"res://data/": "yellow",
+"res://scripts/domain/": "blue",
+"res://scripts/infrastructure/": "purple"
+}
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.09, 0.1, 0.14, 1)
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true

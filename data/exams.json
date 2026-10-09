@@ -1,0 +1,84 @@
+{
+  "exams": [
+    {
+      "id": "math_basic",
+      "name": "基础数学考试",
+      "unlock_requires": {
+        "all": [
+          { "field": "flags.library_math_count", "op": "gte", "value": 5 }
+        ]
+      },
+      "pass_score": 60,
+      "high_score": 80,
+      "weights": { "attribute": 0.7, "fatigue": 0.2, "choice": 0.1 },
+      "attribute_field": "player.math",
+      "choices": [
+        {
+          "id": "careful",
+          "text": "仔细检查每一题",
+          "score_delta": 4,
+          "effects": { "mood": -3, "energy": -5 }
+        },
+        {
+          "id": "fast",
+          "text": "快速做完提前交卷",
+          "score_delta": -2,
+          "effects": { "mood": 2, "energy": 5 }
+        },
+        {
+          "id": "guess",
+          "text": "不会的先蒙一个",
+          "score_delta": 0,
+          "effects": {}
+        }
+      ],
+      "success_effects": { "flags.math_exam_passed": true, "study": 3, "mood": 5 },
+      "fail_effects": { "mood": -5 },
+      "success_money_bonus": 0,
+      "description": "图书馆累计学数学 5 次后解锁。"
+    },
+    {
+      "id": "accounting_entry",
+      "name": "会计入门考试",
+      "unlock_requires": {
+        "all": [
+          { "field": "player.math", "op": "gte", "value": 60 },
+          { "field": "flags.math_exam_passed", "op": "eq", "value": true }
+        ]
+      },
+      "pass_score": 80,
+      "high_score": 90,
+      "weights": { "attribute": 0.7, "fatigue": 0.2, "choice": 0.1 },
+      "attribute_field": "player.math",
+      "choices": [
+        {
+          "id": "careful",
+          "text": "反复核对分录",
+          "score_delta": 5,
+          "effects": { "mood": -4, "energy": -6 }
+        },
+        {
+          "id": "normal",
+          "text": "按平时节奏作答",
+          "score_delta": 0,
+          "effects": {}
+        },
+        {
+          "id": "rush",
+          "text": "赌一把，凭感觉写",
+          "score_delta": -4,
+          "effects": { "mood": 1 }
+        }
+      ],
+      "success_effects": {
+        "flags.accounting_exam_passed": true,
+        "skill": 4,
+        "study": 3,
+        "mood": 6
+      },
+      "fail_effects": { "mood": -6 },
+      "success_money_bonus": 200,
+      "description": "数学 ≥60 后解锁，分数 ≥80 才能申请会计助理。"
+    }
+  ]
+}

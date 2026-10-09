@@ -1,0 +1,358 @@
+{
+  "actions": [
+    {
+      "id": "study_home",
+      "name": "在家自习",
+      "location_id": "home",
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": {
+        "energy": 10,
+        "mood": -3
+      },
+      "effects": {
+        "study": 1
+      },
+      "description": "家里效率一般，胜在随时都能看两眼。学习 +1，心情 -3。"
+    },
+    {
+      "id": "eat_home",
+      "name": "吃家常饭",
+      "location_id": "home",
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": {
+        "money": 0
+      },
+      "effects": {
+        "hunger": -40,
+        "energy": 10,
+        "mood": 3
+      },
+      "description": "不花钱，饥饿 -40，体力 +10，心情 +3。"
+    },
+    {
+      "id": "rest",
+      "name": "休息",
+      "location_id": null,
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": {},
+      "effects": {
+        "energy": 15,
+        "fatigue": -15,
+        "mood": 2
+      },
+      "description": "什么都不做，体力 +15，疲劳 -15，心情 +2。"
+    },
+    {
+      "id": "sleep",
+      "name": "睡觉",
+      "location_id": "home",
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "sleep",
+      "cost": {},
+      "effects": {},
+      "description": "结束今天，进入第二天。睡觉时间决定能否参加早餐店早班。"
+    },
+    {
+      "id": "talk_mom",
+      "name": "和妈妈聊天",
+      "location_id": "home",
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "npc_talk",
+      "npc_id": "mom",
+      "cost": {
+        "energy": 5
+      },
+      "effects": {
+        "mood": 3
+      },
+      "description": "聊聊天，心情 +3，可能触发家庭事件。"
+    },
+    {
+      "id": "eat_breakfast",
+      "name": "吃早餐",
+      "location_id": "breakfast_shop",
+      "available_minutes": [
+        180,
+        600
+      ],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": {
+        "money": 8
+      },
+      "effects": {
+        "hunger": -35,
+        "energy": 8
+      },
+      "description": "花 ¥8，饥饿 -35，体力 +8。"
+    },
+    {
+      "id": "eat_convenience",
+      "name": "买点吃的",
+      "location_id": "convenience_store",
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": {
+        "money": 12
+      },
+      "effects": {
+        "hunger": -25,
+        "energy": 5
+      },
+      "description": "花 ¥12，饥饿 -25，体力 +5。"
+    },
+    {
+      "id": "buy_item",
+      "name": "买东西",
+      "location_id": null,
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 0,
+      "handler": "shop",
+      "cost": {},
+      "effects": {},
+      "description": "打开商品列表，购买护具、文具、食物等。"
+    },
+    {
+      "id": "lottery",
+      "name": "刮彩票",
+      "location_id": "convenience_store",
+      "available_minutes": [
+        0,
+        1440
+      ],
+      "duration_slots": 1,
+      "handler": "lottery",
+      "cost": {
+        "money": 10
+      },
+      "effects": {},
+      "description": "花 ¥10 碰碰运气。幸运值高时中奖档位略好，但连买会上头。"
+    },
+    {
+      "id": "study_library",
+      "name": "图书馆自习",
+      "location_id": "library",
+      "available_minutes": [
+        540,
+        1260
+      ],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": {
+        "energy": 10,
+        "mood": -5
+      },
+      "effects": {
+        "study": 2
+      },
+      "description": "环境好，学习 +2，心情 -5。"
+    },
+    {
+      "id": "math_study",
+      "name": "学数学",
+      "location_id": "library",
+      "available_minutes": [
+        540,
+        1260
+      ],
+      "duration_slots": 1,
+      "handler": "math_study",
+      "cost": {
+        "energy": 10,
+        "mood": -3
+      },
+      "effects": {
+        "math": 3
+      },
+      "description": "数学 +3，心情 -3。累计 5 次解锁基础数学考试。"
+    },
+    {
+      "id": "take_exam",
+      "name": "参加考试",
+      "location_id": null,
+      "available_minutes": [
+        540,
+        1020
+      ],
+      "duration_slots": 1,
+      "handler": "exam",
+      "requires": {
+        "all": [
+          {
+            "any": [
+              {
+                "field": "flags.library_math_count",
+                "op": "gte",
+                "value": 5
+              },
+              {
+                "field": "player.math",
+                "op": "gte",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "field": "day",
+            "op": "in",
+            "value": [
+              14,
+              15,
+              29,
+              30,
+              44,
+              45,
+              59,
+              60
+            ]
+          }
+        ]
+      },
+      "cost": {
+        "energy": 15
+      },
+      "effects": {},
+      "description": "每阶段末可参加一次数学考试，分数决定证书和岗位资格。",
+      "fail_hints": {
+        "day": "考试只在每个阶段末（第 14/15、29/30、44/45、59/60 天）开放。"
+      }
+    },
+    {
+      "id": "exercise",
+      "name": "锻炼",
+      "location_id": "gym_park",
+      "available_minutes": [
+        360,
+        1320
+      ],
+      "duration_slots": 1,
+      "handler": "exercise",
+      "cost": {
+        "money": 10,
+        "energy": 15,
+        "hunger": 6
+      },
+      "effects": {
+        "muscle": 3,
+        "fitness": 2
+      },
+      "description": "花 ¥10，肌肉度 +3，体能 +2，连续锻炼有额外奖励。"
+    },
+    {
+      "id": "collect_scrap",
+      "name": "捡废品",
+      "location_id": null,
+      "available_minutes": [
+        360,
+        1320
+      ],
+      "duration_slots": 1,
+      "handler": "scrap",
+      "cost": {
+        "energy": 12,
+        "mood": -2
+      },
+      "effects": {},
+      "description": "花一个时段收集纸箱和瓶子，赚 ¥10–60，可能发现隐藏线索。"
+    },
+    {
+      "id": "socialize",
+      "name": "社交",
+      "location_id": null,
+      "available_minutes": [
+        600,
+        1320
+      ],
+      "duration_slots": 1,
+      "handler": "social",
+      "cost": {
+        "money": 15,
+        "energy": 8
+      },
+      "effects": {
+        "mood": 5,
+        "communication": 1
+      },
+      "description": "花 ¥15，心情 +5，沟通 +1，可能遇到朋友。"
+    },
+    {
+      "id": "stroll",
+      "name": "逛街",
+      "location_id": "commercial_street",
+      "available_minutes": [
+        600,
+        1320
+      ],
+      "duration_slots": 1,
+      "handler": "stroll",
+      "cost": {
+        "energy": 8
+      },
+      "effects": {
+        "mood": 2
+      },
+      "description": "消耗一个时段，触发一个街头事件或发现招工信息。"
+    },
+    {
+      "id": "apply_accounting",
+      "name": "申请会计助理",
+      "location_id": "bank_office",
+      "available_minutes": [
+        540,
+        1020
+      ],
+      "duration_slots": 1,
+      "handler": "apply_job",
+      "job_id": "accounting_shift",
+      "requires": {
+        "all": [
+          {
+            "field": "flags.accounting_exam_passed",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "player.responsibility",
+            "op": "gte",
+            "value": 45
+          }
+        ]
+      },
+      "cost": {
+        "energy": 10
+      },
+      "effects": {},
+      "description": "数学考试 ≥80 且责任感 ≥45 才能申请，通过后解锁会计助理班次。"
+    }
+  ]
+}

@@ -1,0 +1,221 @@
+{
+  "jobs": [
+    {
+      "id": "breakfast_shift",
+      "name": "早餐店早班",
+      "location_id": "breakfast_shop",
+      "available_minutes": [
+        180,
+        420
+      ],
+      "duration_slots": 1,
+      "wage": 100,
+      "requires": {
+        "all": [
+          {
+            "field": "player.responsibility",
+            "op": "gte",
+            "value": 35
+          },
+          {
+            "field": "player.health",
+            "op": "gte",
+            "value": 30
+          }
+        ]
+      },
+      "early_shift": {
+        "required_flag": "early_sleep_ok",
+        "forced_wage_multiplier": 0.6,
+        "forced_health_cost": 5,
+        "forced_mood_cost": 3,
+        "max_sleep_debt": 2
+      },
+      "cost": {
+        "energy": 20,
+        "hunger": 8,
+        "mood": -2
+      },
+      "effects": {
+        "communication": 1,
+        "responsibility": 1
+      },
+      "fail_hints": {
+        "player.responsibility": "老周觉得你不太靠谱，暂时不让你上早班。",
+        "player.health": "身体太差，先养好身体再谈早班。"
+      },
+      "late_penalty": {
+        "money": -30,
+        "mood": -3,
+        "trust": -2
+      },
+      "risk_event_pool": [
+        "job_breakfast_01"
+      ],
+      "description": "凌晨 3 点到 7 点，天没亮就得出门。前一天 21:30 前必须睡着。"
+    },
+    {
+      "id": "tea_shop_shift",
+      "name": "奶茶店店员",
+      "location_id": "tea_shop",
+      "available_minutes": [
+        600,
+        1320
+      ],
+      "duration_slots": 1,
+      "wage": 80,
+      "requires": {
+        "all": [
+          {
+            "field": "player.health",
+            "op": "gte",
+            "value": 30
+          }
+        ]
+      },
+      "cost": {
+        "energy": 18,
+        "hunger": 6
+      },
+      "effects": {
+        "communication": 1
+      },
+      "risk_event_pool": [
+        "job_customer_01",
+        "job_customer_02"
+      ],
+      "description": "10:00 到 22:00 之间任选一班，顾客事件很多。"
+    },
+    {
+      "id": "construction_shift",
+      "name": "搬砖 / 仓库",
+      "location_id": "hardware_store",
+      "available_minutes": [
+        480,
+        1080
+      ],
+      "duration_slots": 1,
+      "wage": 120,
+      "requires": {
+        "all": [
+          {
+            "field": "player.fitness",
+            "op": "gte",
+            "value": 35
+          },
+          {
+            "field": "player.health",
+            "op": "gte",
+            "value": 30
+          }
+        ]
+      },
+      "cost": {
+        "energy": 28,
+        "hunger": 12,
+        "fatigue": 12
+      },
+      "effects": {
+        "fitness": 1,
+        "muscle": 1
+      },
+      "hard_work": {
+        "enabled": true,
+        "muscle_threshold": 40,
+        "forbid_muscle_below": 25,
+        "forbid_health_below": 50,
+        "wage_multiplier": 0.5,
+        "injury_weights": {
+          "sore": 40,
+          "sprain": 20,
+          "fracture": 6
+        }
+      },
+      "risk_event_pool": [
+        "job_construction_01"
+      ],
+      "description": "08:00 到 18:00。肌肉度 ≥40 才能正常接班，不足可以硬干但会受伤。"
+    },
+    {
+      "id": "tutor_shift",
+      "name": "家教",
+      "location_id": "home",
+      "available_minutes": [
+        960,
+        1200
+      ],
+      "duration_slots": 1,
+      "wage": 150,
+      "requires": {
+        "all": [
+          {
+            "field": "player.study",
+            "op": "gte",
+            "value": 45
+          },
+          {
+            "field": "flags.trial_lesson_done",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "cost": {
+        "energy": 16,
+        "hunger": 5
+      },
+      "effects": {
+        "study": 1,
+        "communication": 1
+      },
+      "fail_hints": {
+        "flags.trial_lesson_done": "你还没通过试讲，家长不敢把孩子交给你。"
+      },
+      "risk_event_pool": [
+        "job_tutor_01"
+      ],
+      "description": "16:00 到 20:00，学习 ≥45 且通过一次试讲后可接。需要连续出勤。"
+    },
+    {
+      "id": "accounting_shift",
+      "name": "会计助理",
+      "location_id": "bank_office",
+      "available_minutes": [
+        540,
+        1020
+      ],
+      "duration_slots": 1,
+      "wage": 220,
+      "requires": {
+        "all": [
+          {
+            "field": "flags.accounting_hired",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "player.responsibility",
+            "op": "gte",
+            "value": 45
+          }
+        ]
+      },
+      "cost": {
+        "energy": 22,
+        "hunger": 6,
+        "mood": -3
+      },
+      "effects": {
+        "skill": 2,
+        "study": 1
+      },
+      "fail_hints": {
+        "flags.accounting_hired": "你还没通过会计助理的面试。"
+      },
+      "risk_event_pool": [
+        "job_accounting_01"
+      ],
+      "description": "09:00 到 17:00。数学考试 ≥80 且责任感 ≥45 才能申请，名额很少。"
+    }
+  ]
+}
