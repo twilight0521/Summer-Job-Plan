@@ -12,6 +12,7 @@ var location_box: VBoxContainer
 var log_label: RichTextLabel
 var top_label: Label
 var tip_label: Label
+var primary_action_button: Button
 var overlay: Control
 var _modal_open: bool = false
 var _last_phase: int = 0
@@ -180,8 +181,8 @@ func _build_bottom_bar() -> void:
 	var buttons := VBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 2)
 	hbox.add_child(buttons)
-	_add_small_button(buttons, "跳过时段", func(): GameFlow.rest_until_next_slot())
-	_add_small_button(buttons, "保存", func(): GameFlow.save_manual("manual_1"))
+	_add_small_button(buttons, "发呆 / 随机", func(): GameFlow.idle_until_next_slot())
+	primary_action_button = _add_small_button(buttons, "确认行动", _on_primary_action_pressed)
 	_add_small_button(buttons, "标题", func(): get_tree().change_scene_to_file("res://scenes/title/title.tscn"))
 
 func _section(text: String) -> Label:
@@ -205,11 +206,12 @@ func _stat_row(field: String, store: Dictionary) -> HBoxContainer:
 	store[field] = value_label
 	return row
 
-func _add_small_button(parent: Control, text: String, handler: Callable) -> void:
+func _add_small_button(parent: Control, text: String, handler: Callable) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.pressed.connect(handler)
 	parent.add_child(btn)
+	return btn
 
 # ---------------------------------------------------------------------------
 # 刷新
@@ -236,6 +238,7 @@ func _refresh() -> void:
 
 	_refresh_locations()
 	_refresh_actions()
+	_refresh_primary_action()
 	_refresh_relationships()
 	if not _modal_open:
 		_focus_first_action()
@@ -290,6 +293,21 @@ func _refresh_actions() -> void:
 		var first := action_box.get_child(0)
 		if first is Control:
 			first.grab_focus()
+
+func _refresh_primary_action() -> void:
+	if primary_action_button == null:
+		return
+	var candidate := GameFlow.primary_location_action()
+	primary_action_button.disabled = candidate.is_empty()
+	primary_action_button.text = str(candidate.get("label", "确认行动")) if not candidate.is_empty() else "当前无可确认行动"
+	if not candidate.is_empty():
+		primary_action_button.tooltip_text = _preview_tooltip(candidate.get("preview", {}))
+
+func _on_primary_action_pressed() -> void:
+	var candidate := GameFlow.primary_location_action()
+	if candidate.is_empty():
+		return
+	_on_action_pressed(str(candidate.get("action_id", "")), candidate.get("preview", {}))
 
 func _refresh_relationships() -> void:
 	for child in rel_box.get_children():

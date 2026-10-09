@@ -274,10 +274,77 @@ func location_is_open(location_id: String) -> bool:
 	return now >= int(range_arr[0]) and now <= int(range_arr[1])
 
 func rest_until_next_slot() -> void:
+	idle_until_next_slot()
+
+## 不安排具体行动时的默认选择：发呆消磨一个时段；状态过差则自动睡着。
+func idle_until_next_slot() -> void:
 	if state == null:
 		return
-	_advance_slot()
+	var working := state.duplicate_state()
+	var forced_sleep := float(working.player.get("fatigue", 0)) >= 85.0 or float(working.player.get("energy", 0)) <= 10.0
+	if forced_sleep:
+		var sleep_result := schedule_system.sleep_and_end_day(working)
+		if not SaveRepository.save_auto(working):
+			message.emit("自动存档失败，未能进入睡眠状态。")
+			return
+		state = working
+		message.emit("你太累了，没能继续安排活动，直接睡着了。")
+		for msg in sleep_result.get("messages", []):
+			message.emit(str(msg))
+		_after_day_end(sleep_result)
+		state_changed.emit()
+		return
+
+	if RandomSource.chance(0.5):
+		working.add_player("mood", 1, "发呆放松")
+		working.add_player("fatigue", 2, "发呆")
+		message.emit("你发了一会儿呆，心情稍微放松了。")
+	else:
+		working.add_player("energy", -2, "发呆")
+		working.add_player("fatigue", 1, "发呆")
+		message.emit("你漫无目的地消磨了一个时段。")
+	var result := schedule_system.advance_slot(working)
+	if not SaveRepository.save_auto(working):
+		message.emit("自动存档失败，发呆未生效。")
+		return
+	state = working
+	if result.get("ended_day", false):
+		for msg in result.get("messages", []):
+			message.emit(str(msg))
+		_after_day_end(result)
 	state_changed.emit()
+
+## 当前地点按常用路线给出一个“确认”按钮对应的行动。
+func primary_location_action() -> Dictionary:
+	if state == null:
+		return {}
+	var preferred: Array = []
+	match state.location_id:
+		"breakfast_shop": preferred = ["breakfast_shift", "eat_breakfast"]
+		"library": preferred = ["math_study", "study_library"]
+		"home": preferred = ["tutor_shift", "study_home", "rest"]
+		"convenience_store": preferred = ["eat_convenience"]
+		"tea_shop": preferred = ["tea_shop_shift", "socialize"]
+		"gym_park": preferred = ["exercise"]
+		"hardware_store": preferred = ["construction_shift", "collect_scrap"]
+		"bank_office": preferred = ["accounting_shift", "apply_accounting"]
+		"commercial_street": preferred = ["stroll", "socialize"]
+	for action_id in preferred:
+		if not ContentLoader.get_action(action_id).is_empty() and action_system.is_available(state, action_id):
+			return {"action_id": action_id, "label": _primary_action_label(action_id), "preview": action_preview(action_id)}
+	return {}
+
+func _primary_action_label(action_id: String) -> String:
+	match action_id:
+		"breakfast_shift", "tea_shop_shift", "construction_shift", "tutor_shift", "accounting_shift": return "确认工作"
+		"math_study", "study_library", "study_home", "take_exam": return "确认学习"
+		"exercise": return "确认锻炼"
+		"stroll", "socialize": return "确认社交"
+		"eat_breakfast", "eat_convenience": return "确认吃饭"
+		"rest": return "确认休息"
+		"collect_scrap": return "确认捡废品"
+		"apply_accounting": return "确认申请"
+	return "确认行动"
 
 func sleep_now() -> void:
 	if state == null:
