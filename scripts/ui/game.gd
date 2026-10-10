@@ -14,6 +14,11 @@ var top_label: Label
 var tip_label: Label
 var primary_action_button: Button
 var overlay: Control
+var top_panel: PanelContainer
+var left_panel: PanelContainer
+var center_panel: PanelContainer
+var right_panel: PanelContainer
+var bottom_panel: PanelContainer
 var _modal_open: bool = false
 var _last_phase: int = 0
 var _last_phase_summary: Dictionary = {}
@@ -56,6 +61,7 @@ func _build_ui() -> void:
 	_build_center_panel()
 	_build_right_panel()
 	_build_bottom_bar()
+	_layout_ui()
 
 	overlay = Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -81,12 +87,53 @@ func _make_panel(rect: Rect2) -> PanelContainer:
 	panel.size = rect.size
 	return panel
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED and is_inside_tree():
+		_layout_ui()
+
+func _layout_ui() -> void:
+	if top_panel == null or bottom_panel == null:
+		return
+	var viewport_size := size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var margin := clampf(viewport_size.x * 0.012, 8.0, 20.0)
+	var gap := clampf(viewport_size.x * 0.008, 6.0, 14.0)
+	var top_height := clampf(viewport_size.y * 0.075, 42.0, 64.0)
+	var bottom_height := clampf(viewport_size.y * 0.14, 76.0, 112.0)
+	var content_y := margin + top_height + gap
+	var content_bottom := viewport_size.y - margin - bottom_height - gap
+	var content_height := maxf(120.0, content_bottom - content_y)
+	var available_width := viewport_size.x - margin * 2.0 - gap * 2.0
+	var left_width := clampf(available_width * 0.24, 210.0, 330.0)
+	var right_width := clampf(available_width * 0.23, 210.0, 330.0)
+	var center_width := available_width - left_width - right_width
+	if center_width < 320.0:
+		var deficit := 320.0 - center_width
+		left_width = maxf(180.0, left_width - deficit * 0.5)
+		right_width = maxf(180.0, right_width - deficit * 0.5)
+		center_width = available_width - left_width - right_width
+	top_panel.position = Vector2(margin, margin)
+	top_panel.size = Vector2(viewport_size.x - margin * 2.0, top_height)
+	left_panel.position = Vector2(margin, content_y)
+	left_panel.size = Vector2(left_width, content_height)
+	center_panel.position = Vector2(margin + left_width + gap, content_y)
+	center_panel.size = Vector2(center_width, content_height)
+	right_panel.position = Vector2(margin + left_width + gap + center_width + gap, content_y)
+	right_panel.size = Vector2(right_width, content_height)
+	bottom_panel.position = Vector2(margin, content_bottom + gap)
+	bottom_panel.size = Vector2(viewport_size.x - margin * 2.0, bottom_height)
+	if log_label != null:
+		log_label.custom_minimum_size = Vector2(maxf(240.0, bottom_panel.size.x - 190.0), 0)
+	if action_box != null:
+		action_box.custom_minimum_size = Vector2(0, maxf(120.0, content_height * 0.45))
+
 func _build_top_bar() -> void:
-	var panel := _make_panel(Rect2(4, 4, 632, 26))
-	add_child(panel)
+	top_panel = _make_panel(Rect2(0, 0, 0, 0))
+	add_child(top_panel)
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 14)
-	panel.add_child(box)
+	top_panel.add_child(box)
 	top_label = Label.new()
 	box.add_child(top_label)
 	tip_label = Label.new()
@@ -94,12 +141,12 @@ func _build_top_bar() -> void:
 	box.add_child(tip_label)
 
 func _build_left_panel() -> void:
-	var panel := _make_panel(Rect2(4, 34, 176, 268))
-	add_child(panel)
+	left_panel = _make_panel(Rect2(0, 0, 0, 0))
+	add_child(left_panel)
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scroll.focus_mode = Control.FOCUS_NONE
-	panel.add_child(scroll)
+	left_panel.add_child(scroll)
 	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 3)
@@ -122,11 +169,11 @@ func _build_left_panel() -> void:
 	vbox.add_child(_stat_row("exp", stat_labels))
 
 func _build_center_panel() -> void:
-	var panel := _make_panel(Rect2(184, 34, 288, 268))
-	add_child(panel)
+	center_panel = _make_panel(Rect2(0, 0, 0, 0))
+	add_child(center_panel)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
-	panel.add_child(vbox)
+	center_panel.add_child(vbox)
 
 	vbox.add_child(_section("街区"))
 	location_box = VBoxContainer.new()
@@ -145,12 +192,12 @@ func _build_center_panel() -> void:
 	scroll.add_child(action_box)
 
 func _build_right_panel() -> void:
-	var panel := _make_panel(Rect2(476, 34, 160, 268))
-	add_child(panel)
+	right_panel = _make_panel(Rect2(0, 0, 0, 0))
+	add_child(right_panel)
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scroll.focus_mode = Control.FOCUS_NONE
-	panel.add_child(scroll)
+	right_panel.add_child(scroll)
 	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 3)
@@ -165,11 +212,11 @@ func _build_right_panel() -> void:
 	vbox.add_child(rel_box)
 
 func _build_bottom_bar() -> void:
-	var panel := _make_panel(Rect2(4, 306, 632, 50))
-	add_child(panel)
+	bottom_panel = _make_panel(Rect2(0, 0, 0, 0))
+	add_child(bottom_panel)
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 6)
-	panel.add_child(hbox)
+	bottom_panel.add_child(hbox)
 
 	log_label = RichTextLabel.new()
 	log_label.bbcode_enabled = true
@@ -183,7 +230,6 @@ func _build_bottom_bar() -> void:
 	hbox.add_child(buttons)
 	_add_small_button(buttons, "发呆 / 随机", func(): GameFlow.idle_until_next_slot())
 	primary_action_button = _add_small_button(buttons, "确认行动", _on_primary_action_pressed)
-	_add_small_button(buttons, "标题", func(): get_tree().change_scene_to_file("res://scenes/title/title.tscn"))
 
 func _section(text: String) -> Label:
 	var label := Label.new()
@@ -471,7 +517,10 @@ func _on_exam_choice(exam_id: String, choice_id: String) -> void:
 	GameFlow.take_exam(exam_id, choice_id)
 
 func _on_exam_result(result: Dictionary) -> void:
-	var lines: Array = ["【%s】%d 分" % [result.get("exam_id", ""), int(result.get("score", 0))]]
+	var exam_id := str(result.get("exam_id", ""))
+	var exam := ContentLoader.get_exam(exam_id)
+	var exam_name := str(exam.get("name", exam_id))
+	var lines: Array = ["【%s】%d 分" % [exam_name, int(result.get("score", 0))]]
 	for line in result.get("breakdown", []):
 		lines.append("· " + str(line))
 	lines.append("结果：" + ("通过！" if bool(result.get("passed", false)) else "未通过"))
@@ -692,18 +741,36 @@ func _show_toast(changes: Array) -> void:
 		if is_zero_approx(delta):
 			continue
 		var field := str(change.get("field", ""))
-		var meta: Dictionary = GameConfig.FIELD_META.get(field, {"name": field})
+		var field_name := _change_field_name(field)
 		var color := "#7ec96a" if delta > 0 else "#e06c75"
-		parts.append("[color=%s]%s %+d[/color]" % [color, meta.get("name", field), int(delta)])
+		parts.append("[color=%s]%s %+d[/color]" % [color, field_name, int(delta)])
 	if not parts.is_empty():
 		_on_message("变化：" + "，".join(parts))
+
+func _change_field_name(field: String) -> String:
+	var meta: Dictionary = GameConfig.FIELD_META.get(field, {})
+	if not meta.is_empty():
+		return str(meta.get("name", field))
+	var parts := field.split(".")
+	if parts.size() >= 3 and parts[0] == "npcs":
+		var character := ContentLoader.get_character(parts[1])
+		var character_name := str(character.get("name", parts[1]))
+		var property_name := {"relationship": "关系", "trust": "信任"}.get(parts[2], parts[2])
+		return "%s%s" % [character_name, property_name]
+	if parts.size() >= 2 and parts[0] == "player":
+		return str(GameConfig.FIELD_META.get(parts[1], {"name": parts[1]}).get("name", parts[1]))
+	if parts.size() >= 2 and parts[0] == "flags":
+		return "状态：%s" % parts[1]
+	return field
 
 func _unhandled_input(event: InputEvent) -> void:
 	var command := InputRouter.command_for_input(event)
 	if command == InputRouter.Command.CANCEL:
 		if _modal_open:
 			_close_modal()
-			get_viewport().set_input_as_handled()
+		else:
+			get_tree().change_scene_to_file("res://scenes/title/title.tscn")
+		get_viewport().set_input_as_handled()
 		return
 	if _modal_open:
 		return

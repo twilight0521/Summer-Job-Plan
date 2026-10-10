@@ -33,6 +33,36 @@ static func run(t) -> void:
 	events.resolve(state, beggar, "b")
 	t.ok(int(state.player.get("trust", 0)) != before_trust, "助人事件改变信任值")
 
+	# 阿凯的发财诱惑会按幸运与关系值展示不同风险分支。
+	var fortune := ContentLoader.get_event("npc_akai_04")
+	var lucky_state := GameState.new_run(1001, ContentLoader.characters)
+	lucky_state.day = 21
+	lucky_state.phase = 2
+	lucky_state.player["luck"] = 70
+	lucky_state.npcs["akai"]["relationship"] = 40
+	var lucky_choices: Array = events.present(lucky_state, fortune).get("choices", [])
+	var lucky_ids: Array = []
+	for choice in lucky_choices:
+		lucky_ids.append(str(choice.get("id", "")))
+	t.ok(lucky_ids.has("a") and lucky_ids.has("b") and not lucky_ids.has("c"), "高幸运或高信任展示可靠发财分支")
+	var lucky_result := events.resolve(lucky_state, fortune, "a")
+	t.eq(lucky_result.get("ok", false), true, "可靠发财分支可结算")
+	t.eq(bool(lucky_state.get_flag("heard_insider_tip")), true, "可靠发财分支记录标记")
+
+	var risky_state := GameState.new_run(1002, ContentLoader.characters)
+	risky_state.day = 21
+	risky_state.phase = 2
+	risky_state.player["luck"] = 20
+	risky_state.npcs["akai"]["relationship"] = 40
+	var risky_choices: Array = events.present(risky_state, fortune).get("choices", [])
+	var risky_ids: Array = []
+	for choice in risky_choices:
+		risky_ids.append(str(choice.get("id", "")))
+	t.ok(risky_ids.has("b") and risky_ids.has("c") and not risky_ids.has("a"), "低幸运低信任展示高风险分支")
+	var risky_result := events.resolve(risky_state, fortune, "c")
+	t.eq(risky_result.get("ok", false), true, "高风险分支可结算")
+	t.eq(bool(risky_state.get_flag("fell_for_overseas_scam")), true, "高风险分支记录骗局标记")
+
 	# 负现金选项不能在余额不足时被当作免费选择。
 	state.day = 3
 	state.player["money"] = 0

@@ -545,6 +545,43 @@
     },
 
     {
+      "id": "npc_akai_04",
+      "category": "npc",
+      "npc": "akai",
+      "title": "阿凯的发财消息",
+      "text": "阿凯神秘兮兮地说：“有个机会，来钱特别快。运气好、信得过的人，我才告诉他细节。”",
+      "days": [21, 40],
+      "phase": 2,
+      "once": true,
+      "weight": 30,
+      "choices": [
+        {
+          "id": "a",
+          "text": "听听这条“内部消息”",
+          "conditions": { "any": [{ "field": "player.luck", "op": "gte", "value": 65 }, { "field": "npcs.akai.relationship", "op": "gte", "value": 55 }] },
+          "result_text": "你拿到了一条经过多方核实的行业消息，只做了小额尝试，获得了一笔意外收益。",
+          "effects": { "money": 180, "mood": 5 },
+          "extra": [{ "path": "player.trust", "op": "add", "value": 3 }, { "path": "flags.heard_insider_tip", "op": "set", "value": true }, { "path": "npcs.akai.relationship", "op": "add", "value": 5 }]
+        },
+        {
+          "id": "b",
+          "text": "先核实来源，不急着掏钱",
+          "result_text": "你发现材料漏洞百出，及时避开了一场骗局。",
+          "effects": { "responsibility": 2, "mood": 2 },
+          "extra": [{ "path": "player.luck", "op": "add", "value": 2 }, { "path": "flags.avoided_money_scam", "op": "set", "value": true }, { "path": "npcs.akai.relationship", "op": "add", "value": 1 }]
+        },
+        {
+          "id": "c",
+          "text": "答应去外地参加高薪项目",
+          "conditions": { "all": [{ "field": "player.luck", "op": "lte", "value": 40 }, { "field": "npcs.akai.relationship", "op": "lte", "value": 45 }] },
+          "result_text": "你被拉进层层收费的传销式组织，发现行程和证件都被控制。你及时求助并报警，虽然损失了一笔钱，但避免了更大的危险。",
+          "effects": { "money": -150, "mood": -8, "health": -5, "energy": -10 },
+          "extra": [{ "path": "player.trust", "op": "add", "value": -6 }, { "path": "player.luck", "op": "add", "value": -4 }, { "path": "flags.fell_for_overseas_scam", "op": "set", "value": true }]
+        }
+      ]
+    },
+
+    {
       "id": "npc_cat_01",
       "category": "npc",
       "npc": "night_cat",

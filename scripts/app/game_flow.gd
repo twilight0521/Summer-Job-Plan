@@ -281,36 +281,14 @@ func idle_until_next_slot() -> void:
 	if state == null:
 		return
 	var working := state.duplicate_state()
-	var forced_sleep := float(working.player.get("fatigue", 0)) >= 85.0 or float(working.player.get("energy", 0)) <= 10.0
-	if forced_sleep:
-		var sleep_result := schedule_system.sleep_and_end_day(working)
-		if not SaveRepository.save_auto(working):
-			message.emit("自动存档失败，未能进入睡眠状态。")
-			return
-		state = working
-		message.emit("你太累了，没能继续安排活动，直接睡着了。")
-		for msg in sleep_result.get("messages", []):
-			message.emit(str(msg))
-		_after_day_end(sleep_result)
-		state_changed.emit()
-		return
-
-	if RandomSource.chance(0.5):
-		working.add_player("mood", 1, "发呆放松")
-		working.add_player("fatigue", 2, "发呆")
-		message.emit("你发了一会儿呆，心情稍微放松了。")
-	else:
-		working.add_player("energy", -2, "发呆")
-		working.add_player("fatigue", 1, "发呆")
-		message.emit("你漫无目的地消磨了一个时段。")
-	var result := schedule_system.advance_slot(working)
+	var result := schedule_system.idle(working)
 	if not SaveRepository.save_auto(working):
 		message.emit("自动存档失败，发呆未生效。")
 		return
 	state = working
+	for msg in result.get("messages", []):
+		message.emit(str(msg))
 	if result.get("ended_day", false):
-		for msg in result.get("messages", []):
-			message.emit(str(msg))
 		_after_day_end(result)
 	state_changed.emit()
 

@@ -91,6 +91,18 @@
       "description": "聊聊天，心情 +3，可能触发家庭事件。"
     },
     {
+      "id": "talk_akai",
+      "name": "和阿凯聊聊",
+      "location_id": "commercial_street",
+      "available_minutes": [600, 1320],
+      "duration_slots": 1,
+      "handler": "npc_talk",
+      "npc_id": "akai",
+      "cost": { "energy": 5 },
+      "effects": { "mood": 2 },
+      "description": "听听阿凯最近的门路，可能遇到高收益机会，也可能踩进骗局。"
+    },
+    {
       "id": "eat_breakfast",
       "name": "吃早餐",
       "location_id": "breakfast_shop",

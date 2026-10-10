@@ -24,6 +24,34 @@ func advance_slot(state: GameState) -> Dictionary:
 		return {"advanced": true, "ended_day": false, "phase_completed": 0, "game_over": false}
 	return auto_end_day(state)
 
+## 无目标地消磨时间。过劳时无法继续发呆，会直接睡到次日。
+func idle(state: GameState) -> Dictionary:
+	if float(state.player.get("fatigue", 0)) >= 85.0 or float(state.player.get("energy", 0)) <= 10.0:
+		var sleep_result := sleep_and_end_day(state)
+		var sleep_messages: Array = ["你太累了，没能继续安排活动，直接睡着了。"]
+		sleep_messages.append_array(sleep_result.get("messages", []))
+		sleep_result["messages"] = sleep_messages
+		sleep_result["forced_sleep"] = true
+		return sleep_result
+	var idle_message := ""
+	var changes: Array = []
+	if RandomSource.chance(0.5):
+		changes.append(state.add_player("mood", 1, "发呆放松"))
+		changes.append(state.add_player("fatigue", 2, "发呆"))
+		idle_message = "你发了一会儿呆，心情稍微放松了。"
+	else:
+		changes.append(state.add_player("energy", -2, "发呆"))
+		changes.append(state.add_player("fatigue", 1, "发呆"))
+		idle_message = "你漫无目的地消磨了一个时段。"
+	var result := advance_slot(state)
+	var messages: Array = [idle_message]
+	messages.append_array(result.get("messages", []))
+	result["messages"] = messages
+	changes.append_array(result.get("changes", []))
+	result["changes"] = changes
+	result["forced_sleep"] = false
+	return result
+
 ## 玩家主动睡觉。晚上（slot 3）入睡视为 21:30 前早睡。
 func sleep_and_end_day(state: GameState) -> Dictionary:
 	var changes: Array = []

@@ -7,6 +7,7 @@ static func run(t) -> void:
 	_experience_and_passives(t)
 	_parent_rewards(t)
 	_exam_phase_gate(t)
+	_idle_and_primary_action(t)
 
 static func _sleep_rules(t) -> void:
 	var sched := ScheduleSystem.new()
@@ -87,3 +88,28 @@ static func _exam_phase_gate(t) -> void:
 	t.eq(actions.availability_report(s, "take_exam").get("ok", false), false, "非阶段末不能参加考试")
 	s.day = 14
 	t.eq(actions.availability_report(s, "take_exam").get("ok", false), true, "阶段末可以参加考试")
+
+static func _idle_and_primary_action(t) -> void:
+	var sched := ScheduleSystem.new()
+	var normal := GameState.new_run(211, ContentLoader.characters)
+	var idle_result := sched.idle(normal)
+	t.eq(idle_result.get("forced_sleep", true), false, "状态正常时发呆不会强制睡眠")
+	t.eq(normal.slot, 1, "发呆推进一个时段")
+	t.ok(float(normal.player.get("fatigue", 0)) > 0.0, "发呆产生状态变化")
+
+	var exhausted := GameState.new_run(212, ContentLoader.characters)
+	exhausted.slot = 2
+	exhausted.player["fatigue"] = 85
+	var sleep_result := sched.idle(exhausted)
+	t.eq(sleep_result.get("forced_sleep", false), true, "疲劳达到阈值自动睡眠")
+	t.eq(exhausted.day, 2, "过劳睡眠进入下一天")
+
+	var old_state: GameState = GameFlow.state
+	var library := GameState.new_run(213, ContentLoader.characters)
+	library.location_id = "library"
+	library.slot = 2
+	GameFlow.state = library
+	var primary := GameFlow.primary_location_action()
+	t.eq(primary.get("label", ""), "确认学习", "图书馆主按钮为确认学习")
+	t.eq(primary.get("action_id", ""), "math_study", "图书馆默认数学学习")
+	GameFlow.state = old_state
