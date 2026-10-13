@@ -1,5 +1,18 @@
 # 更新日志
 
+## 2026-10-13
+
+### Added
+
+- 增加 Godot 导出预设，支持生成 macOS 应用、Windows 64 位程序和 Android ARM64 APK。
+- README 增加多平台发布步骤、导出模板要求、构建命令和签名说明。
+- 将本地导出目录 `builds/` 加入忽略规则，避免把构建产物提交到仓库。
+
+### Fixed
+
+- 修复 NPC 属性名称格式化时的 GDScript 类型推断问题。
+- 启用 ETC2/ASTC 纹理压缩导入，为 Android 导出提供兼容资源。
+
 ## 2026-10-10
 
 ### Added

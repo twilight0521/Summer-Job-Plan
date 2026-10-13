@@ -755,7 +755,7 @@ func _change_field_name(field: String) -> String:
 	if parts.size() >= 3 and parts[0] == "npcs":
 		var character := ContentLoader.get_character(parts[1])
 		var character_name := str(character.get("name", parts[1]))
-		var property_name := {"relationship": "关系", "trust": "信任"}.get(parts[2], parts[2])
+		var property_name: String = str({"relationship": "关系", "trust": "信任"}.get(parts[2], parts[2]))
 		return "%s%s" % [character_name, property_name]
 	if parts.size() >= 2 and parts[0] == "player":
 		return str(GameConfig.FIELD_META.get(parts[1], {"name": parts[1]}).get("name", parts[1]))

@@ -4,7 +4,7 @@
 
 ## 项目状态
 
-当前版本为 MVP 原型，核心数据、领域系统、场景和测试框架已经纳入项目。当前版本补充了更大的 1280×720 游戏视口、发呆消磨时段、过劳自动睡眠，以及阿凯 NPC 对话和街头机会内容。内容采用 JSON 驱动，便于继续增加职业、事件、角色和结局。
+当前版本为 MVP 原型，核心数据、领域系统、场景和测试框架已经纳入项目。当前版本补充了 1280×720 游戏视口、发呆消磨时段、过劳自动睡眠，以及阿凯 NPC 对话和街头机会内容，并提供 macOS、Windows、Android 三个平台的导出预设。内容采用 JSON 驱动，便于继续增加职业、事件、角色和结局。
 
 ## 核心玩法
 
@@ -23,6 +23,24 @@
 3. 打开 `project.godot`，运行项目主场景。
 
 项目默认启动场景为 `scenes/boot/boot.tscn`，窗口逻辑分辨率为 1280×720。
+
+## 发布给其他人（Windows / Android / macOS）
+
+项目已包含三套导出预设：`macOS`、`Windows` 和 `Android`。首次导出前，在 Godot 编辑器中打开 `Editor > Manage Export Templates`，安装与当前编辑器完全一致的 `4.7.2.stable` 导出模板。
+
+在项目根目录执行：
+
+```bash
+mkdir -p builds
+godot --headless --path . --export-release "macOS" builds/暑假工计划.app
+ditto -c -k --sequesterRsrc --keepParent builds/暑假工计划.app builds/暑假工计划-macOS.zip
+godot --headless --path . --export-release "Windows" builds/暑假工计划.exe
+godot --headless --path . --export-release "Android" builds/暑假工计划.apk
+```
+
+macOS 和 Windows 导出后可以分别压缩分发。当前 Android 预设默认生成可直接安装的 APK；如果要提交 Google Play，再将 `gradle/export_format` 改为 `aab`，并配置 Android keystore 签名。
+
+未签名的 macOS 版本首次启动时，需要右键应用并选择“打开”；Windows 版本通常可直接运行。公开分发给大量用户时，建议配置 Apple Developer 签名/公证和 Windows 代码签名，减少系统安全警告。
 
 ## 运行测试
 
