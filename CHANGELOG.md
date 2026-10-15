@@ -1,5 +1,13 @@
 # 更新日志
 
+## 2026-10-15
+
+### Released
+
+- 发布首个公开试玩版本 [`v0.1.0`](https://github.com/twilight0521/Summer-Job-Plan/releases/tag/v0.1.0)。
+- 提供 Windows 64 位压缩包、macOS DMG 安装镜像和 Android ARM64 APK。
+- README 增加 GitHub Releases 下载入口。
+
 ## 2026-10-13
 
 ### Added

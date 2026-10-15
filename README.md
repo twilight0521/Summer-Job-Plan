@@ -26,6 +26,8 @@
 
 ## 发布给其他人（Windows / Android / macOS）
 
+无需安装 Godot 的玩家可以直接前往 [GitHub Releases](https://github.com/twilight0521/Summer-Job-Plan/releases/latest) 下载 Windows、macOS 或 Android 安装包。
+
 项目已包含三套导出预设：`macOS`、`Windows` 和 `Android`。首次导出前，在 Godot 编辑器中打开 `Editor > Manage Export Templates`，安装与当前编辑器完全一致的 `4.7.2.stable` 导出模板。
 
 在项目根目录执行：
