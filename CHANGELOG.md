@@ -2,6 +2,13 @@
 
 ## 2026-10-23
 
+### Released
+
+- 发布 [`v0.1.1`](https://github.com/twilight0521/Summer-Job-Plan/releases/tag/v0.1.1)，把本轮的稳定性与内容修复交付给玩家。
+- 附件：`Summer-Job-Plan-v0.1.1-Windows-x86_64.zip`、`Summer-Job-Plan-v0.1.1-macOS.dmg`、`Summer-Job-Plan-v0.1.1-macOS.zip`、`Summer-Job-Plan-v0.1.1-Android-arm64.apk`。
+- 导出预设版本号升至 `0.1.1`（Android `versionCode` 由 1 递增到 2）。
+- Android 包改用新生成的发布密钥签名，`v0.1.0` 用户需先卸载再安装；密钥文件与口令保存在仓库之外。
+
 ### Fixed
 
 - 修复高睡眠债时睡觉反而扣体力、疲劳几乎不恢复的问题（会形成“越熬夜越睡不回来”的死循环），睡眠恢复量现在有下限。
@@ -23,7 +30,8 @@
 ### Docs
 
 - README 同步本轮状态：补充修复清单、测试说明（139 条用例、独立存档目录）和 `tests/` 目录描述。
-- README 新增「上传新版本到 GitHub」流程：测试 → 提交推送 → 打标签 → 上传 Release 附件，并说明 `builds/` 不入库、`v0.1.0` 构建产物早于本轮修复。
+- README 下载区改为平台对照表，写明 Windows 需带 `.pck`、macOS 未签名需右键打开、Android 的签名升级限制。
+- README 新增「上传新版本到 GitHub」流程：改版本号 → 测试 → 导出签名 → 提交推送 → 打标签 → 上传 Release 附件，并说明 `builds/` 不入库、签名密钥的保管要求。
 - `.gitignore` 增加 `.workbuddy-ai/`，避免本地工具目录进入仓库。
 
 ## 2026-10-15

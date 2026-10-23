@@ -37,7 +37,15 @@
 
 ## 发布给其他人（Windows / Android / macOS）
 
-无需安装 Godot 的玩家可以直接前往 [GitHub Releases](https://github.com/twilight0521/Summer-Job-Plan/releases/latest) 下载 Windows、macOS 或 Android 安装包。
+无需安装 Godot 的玩家可以直接前往 [GitHub Releases](https://github.com/twilight0521/Summer-Job-Plan/releases/latest) 下载最新版本，当前为 `v0.1.1`：
+
+| 平台 | 文件 | 说明 |
+| --- | --- | --- |
+| Windows 64 位 | `Summer-Job-Plan-v0.1.1-Windows-x86_64.zip` | 解压后运行 `暑假工计划.exe`，`.pck` 需与它放在同一目录 |
+| macOS | `Summer-Job-Plan-v0.1.1-macOS.dmg`、`-macOS.zip` | 通用二进制（Intel + Apple Silicon），未签名，首次启动需右键「打开」 |
+| Android arm64 | `Summer-Job-Plan-v0.1.1-Android-arm64.apk` | 自签名安装包，最低 Android 7.0（API 24） |
+
+> Android 升级注意：`v0.1.1` 使用新生成的签名密钥（`v0.1.0` 的旧密钥已不在仓库维护者手中），已安装 `v0.1.0` 的设备需要先卸载再安装，否则会因签名冲突安装失败；卸载会一并清除应用内的本地存档。
 
 项目已包含三套导出预设：`macOS`、`Windows` 和 `Android`。首次导出前，在 Godot 编辑器中打开 `Editor > Manage Export Templates`，安装与当前编辑器完全一致的 `4.7.2.stable` 导出模板。
 
@@ -47,11 +55,24 @@
 mkdir -p builds
 godot --headless --path . --export-release "macOS" builds/暑假工计划.app
 ditto -c -k --sequesterRsrc --keepParent builds/暑假工计划.app builds/暑假工计划-macOS.zip
+hdiutil create -volname "暑假工计划" -srcfolder builds/暑假工计划.app -ov -format UDZO builds/暑假工计划-macOS.dmg
 godot --headless --path . --export-release "Windows" builds/暑假工计划.exe
+zip -j builds/暑假工计划-Windows.zip builds/暑假工计划.exe builds/暑假工计划.pck
 godot --headless --path . --export-release "Android" builds/暑假工计划.apk
 ```
 
-macOS 和 Windows 导出后可以分别压缩分发。当前 Android 预设默认生成可直接安装的 APK；如果要提交 Google Play，再将 `gradle/export_format` 改为 `aab`，并配置 Android keystore 签名。
+Windows 导出会生成独立的 `.pck`，分发时必须和 `.exe` 一起打包，否则游戏无法启动。
+
+Android 导出的是未签名包，必须自行签名后才能安装：
+
+```bash
+apksigner sign --ks ~/.android/summer-job-plan.jks --ks-key-alias summer_j \
+  --ks-pass pass:<口令> --key-pass pass:<口令> \
+  --out builds/暑假工计划-signed.apk builds/暑假工计划.apk
+apksigner verify builds/暑假工计划-signed.apk
+```
+
+签名密钥保存在本机 `~/.android/summer-job-plan.jks`，口令单独记录、不入库。**换机器或重装系统前务必备份该文件**，密钥丢失后无法再覆盖升级，只能让玩家卸载重装。密钥口令若写进 `export_presets.cfg` 会随仓库公开，因此签名保持在导出后单独执行。
 
 未签名的 macOS 版本首次启动时，需要右键应用并选择“打开”；Windows 版本通常可直接运行。公开分发给大量用户时，建议配置 Apple Developer 签名/公证和 Windows 代码签名，减少系统安全警告。
 
@@ -60,11 +81,10 @@ macOS 和 Windows 导出后可以分别压缩分发。当前 Android 预设默�
 `builds/` 已在忽略规则内，构建产物不进仓库，只作为 Release 附件上传：
 
 1. 先确认测试通过：`godot --headless --path . --scene tests/test_runner.tscn`（当前 139 条用例，应全绿）。
-2. 更新 `CHANGELOG.md`，按 `git add -A && git commit -m "release: vX.Y.Z" && git push origin main` 提交源码。
-3. 打标签并推送：`git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`。
-4. 打开仓库 Releases 页面，基于该标签新建 Release，上传 `builds/` 下的 `暑假工计划-Windows.zip`、`暑假工计划-macOS.dmg`、`暑假工计划.apk`，发布说明直接复制 CHANGELOG 对应条目。
-
-> 已发布的 `v0.1.0` 构建产物早于 2026-10-23 的修复，仓库源码比下载包新。要让玩家拿到这些修复，需要按上述步骤重新导出并发布新的版本号。
+2. 改 `export_presets.cfg` 里三处版本号（macOS 的 `short_version`/`version`、Windows 的 `file_version`/`product_version`、Android 的 `version/code` 递增 + `version/name`），再按上面的命令重新导出并签名。
+3. 更新 `CHANGELOG.md`，按 `git add -A && git commit -m "release: vX.Y.Z" && git push origin main` 提交源码。
+4. 打标签并推送：`git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`。
+5. 打开仓库 Releases 页面，基于该标签新建 Release，上传 Windows 压缩包、macOS 的 dmg/zip、Android 的 APK，附件名统一为 `Summer-Job-Plan-vX.Y.Z-<平台>`，发布说明直接复制 CHANGELOG 对应条目。
 
 ## 运行测试
 
