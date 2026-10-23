@@ -28,10 +28,19 @@ func is_eligible(state: GameState, event: Dictionary, location_id: String = "") 
 
 	var raw_loc: Variant = event.get("location", "")
 	var loc: String = "" if raw_loc == null else str(raw_loc)
+	var check_loc := location_id if location_id != "" else state.location_id
 	if loc != "":
-		var check_loc := location_id if location_id != "" else state.location_id
 		if loc != check_loc:
 			return false
+	else:
+		# 没有显式 location 的 NPC 剧情事件绑定到该 NPC 的常驻地点，
+		# 否则无池抽取时会从全库随机，导致"妈妈的对话在图书馆弹出"。
+		var raw_npc: Variant = event.get("npc", "")
+		var npc_id: String = "" if raw_npc == null else str(raw_npc)
+		if npc_id != "":
+			var npc_loc := str(ContentLoader.get_character(npc_id).get("location", ""))
+			if npc_loc != "" and npc_loc != check_loc:
+				return false
 
 	if bool(event.get("once", false)) and bool(state.get_flag(EVENT_FIRED_PREFIX + str(event.get("id", "")))):
 		return false

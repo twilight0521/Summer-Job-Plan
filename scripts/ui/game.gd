@@ -298,8 +298,7 @@ func _focus_first_action() -> void:
 			return
 
 func _refresh_locations() -> void:
-	for child in location_box.get_children():
-		child.queue_free()
+	_clear_children(location_box)
 	var state := GameFlow.state
 	for loc in ContentLoader.all_locations():
 		var loc_id := str(loc.get("id", ""))
@@ -317,8 +316,7 @@ func _on_location_pressed(loc_id: String) -> void:
 	GameFlow.move_to(loc_id)
 
 func _refresh_actions() -> void:
-	for child in action_box.get_children():
-		child.queue_free()
+	_clear_children(action_box)
 	var state := GameFlow.state
 	var actions := GameFlow.available_actions()
 	if actions.is_empty():
@@ -356,8 +354,7 @@ func _on_primary_action_pressed() -> void:
 	_on_action_pressed(str(candidate.get("action_id", "")), candidate.get("preview", {}))
 
 func _refresh_relationships() -> void:
-	for child in rel_box.get_children():
-		child.queue_free()
+	_clear_children(rel_box)
 	for entry in GameFlow.relationship_system.summary(GameFlow.state):
 		var label := Label.new()
 		label.text = "%s  %d（%s）" % [entry.get("name", ""), int(entry.get("relationship", 0)), entry.get("label", "")]
@@ -691,11 +688,17 @@ func _show_modal(content: Control) -> void:
 		first.grab_focus()
 
 func _close_modal() -> void:
-	for child in overlay.get_children():
-		child.queue_free()
+	_clear_children(overlay)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_modal_open = false
 	_set_background_focus(true)
+
+## 先摘出再释放：queue_free 的节点要到帧末才真正消失，
+## 直接 queue_free 后立刻 add_child 会让新旧节点在同一帧共存（重复显示、焦点错乱）。
+func _clear_children(node: Node) -> void:
+	for child in node.get_children():
+		node.remove_child(child)
+		child.queue_free()
 
 func _first_button(node: Node) -> Button:
 	if node is Button:
@@ -726,6 +729,14 @@ func _kv_label(key: String, value: String) -> Label:
 	return label
 
 func _on_message(text: String) -> void:
+	_log_line(_escape_bbcode(text))
+
+## 内容文案直接进 RichTextLabel 会被当成 BBCode 解析，方括号需要转义。
+func _escape_bbcode(text: String) -> String:
+	return text.replace("[", "[lb]")
+
+## 已经带好 BBCode 标记的文本走这里，不做转义。
+func _log_line(text: String) -> void:
 	if log_label == null:
 		return
 	log_label.append_text("[color=#a9a79f]·[/color] " + text + "\n")
@@ -745,7 +756,7 @@ func _show_toast(changes: Array) -> void:
 		var color := "#7ec96a" if delta > 0 else "#e06c75"
 		parts.append("[color=%s]%s %+d[/color]" % [color, field_name, int(delta)])
 	if not parts.is_empty():
-		_on_message("变化：" + "，".join(parts))
+		_log_line("变化：" + "，".join(parts))
 
 func _change_field_name(field: String) -> String:
 	var meta: Dictionary = GameConfig.FIELD_META.get(field, {})

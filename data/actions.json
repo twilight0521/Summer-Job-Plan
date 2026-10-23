@@ -346,6 +346,7 @@
       "duration_slots": 1,
       "handler": "apply_job",
       "job_id": "accounting_shift",
+      "hired_flag": "accounting_hired",
       "requires": {
         "all": [
           {

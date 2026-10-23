@@ -73,11 +73,9 @@ func _add_button(parent: Control, text: String, handler: Callable, enabled: bool
 	parent.add_child(btn)
 
 func _build_load_panel() -> void:
-	_load_panel = PanelContainer.new()
 	var wrap := CenterContainer.new()
 	wrap.set_anchors_preset(Control.PRESET_FULL_RECT)
 	wrap.visible = false
-	_load_panel.visible = false
 	add_child(wrap)
 
 	var dim := ColorRect.new()

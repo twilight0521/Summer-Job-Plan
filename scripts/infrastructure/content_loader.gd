@@ -3,6 +3,9 @@ extends Node
 ## 只做读取和校验，不持有本局状态。
 
 const DATA_DIR := "res://data/"
+const EFFECT_CONTAINERS := ["effects", "cost", "success_effects", "fail_effects"]
+const KNOWN_EFFECT_ROOTS := ["player", "flags", "npcs"]
+const KNOWN_NPC_FIELDS := ["relationship", "trust"]
 
 var locations: Dictionary = {}
 var actions: Dictionary = {}
@@ -176,8 +179,11 @@ func _validate() -> void:
 		if loc_id != "" and not locations.has(loc_id):
 			load_errors.append("事件 %s 引用了不存在的地点 %s" % [event_id, loc_id])
 
-	# 角色阶段事件存在
+	# 角色常驻地点与阶段事件存在
 	for char_id in characters:
+		var char_loc: String = _reference_id(characters[char_id].get("location", ""))
+		if char_loc != "" and not locations.has(char_loc):
+			load_errors.append("角色 %s 引用了不存在的地点 %s" % [char_id, char_loc])
 		for stage in characters[char_id].get("stages", []):
 			var eid: String = str(stage.get("event_id", ""))
 			if not events.has(eid):
@@ -189,6 +195,59 @@ func _validate() -> void:
 		var errs := ConditionEvaluator.validate(cond)
 		for e in errs:
 			load_errors.append("结局 %s 条件错误: %s" % [ending.get("id", "?"), e])
+
+	# 数值改动字段必须存在：否则打错字会被静默写成一个 flag。
+	_validate_effects("actions", actions)
+	_validate_effects("jobs", jobs)
+	_validate_effects("events", events)
+	_validate_effects("exams", exams)
+	_validate_effects("items", items)
+	_validate_effects("passives", passives)
+	for event_id in events:
+		for choice in events[event_id].get("choices", []):
+			_validate_effect_entry("事件 %s 的选项 %s" % [event_id, choice.get("id", "?")], choice)
+
+func _validate_effects(label: String, entries: Dictionary) -> void:
+	for entry_id in entries:
+		var entry: Variant = entries[entry_id]
+		if entry is Dictionary:
+			_validate_effect_entry("%s/%s" % [label, entry_id], entry)
+
+func _validate_effect_entry(owner: String, entry: Dictionary) -> void:
+	for container in EFFECT_CONTAINERS:
+		var raw: Variant = entry.get(container, null)
+		if not (raw is Dictionary):
+			continue
+		for field in raw:
+			_validate_effect_key(owner, container, str(field))
+	var extra: Variant = entry.get("extra", null)
+	if extra is Array:
+		for raw_effect in extra:
+			if raw_effect is Dictionary and str(raw_effect.get("path", "")) != "":
+				_validate_effect_path(owner, str(raw_effect["path"]))
+
+func _validate_effect_key(owner: String, container: String, field: String) -> void:
+	if field.contains("."):
+		_validate_effect_path(owner, field)
+		return
+	if not GameConfig.CLAMPS.has(field):
+		load_errors.append("%s 的 %s 里字段不存在: %s（会被静默当成 flag）" % [owner, container, field])
+
+func _validate_effect_path(owner: String, path: String) -> void:
+	var parts := path.split(".")
+	var root: String = parts[0]
+	if not KNOWN_EFFECT_ROOTS.has(root):
+		load_errors.append("%s 的 effect 路径根未知: %s" % [owner, path])
+		return
+	if root == "player" and (parts.size() < 2 or not GameConfig.CLAMPS.has(parts[1])):
+		load_errors.append("%s 的 effect 玩家字段不存在: %s" % [owner, path])
+	elif root == "flags" and parts.size() < 2:
+		load_errors.append("%s 的 effect flag 名为空: %s" % [owner, path])
+	elif root == "npcs":
+		if parts.size() < 3 or not KNOWN_NPC_FIELDS.has(parts[2]):
+			load_errors.append("%s 的 effect NPC 字段未知: %s" % [owner, path])
+		elif not characters.has(parts[1]):
+			load_errors.append("%s 的 effect NPC 不存在: %s" % [owner, path])
 
 func _reference_id(value: Variant) -> String:
 	if value == null:

@@ -237,11 +237,12 @@ func _resolve_scrap(state: GameState, result: Dictionary) -> void:
 		result.messages.append("你在废品里发现一张招工名片。")
 
 func _apply_job(state: GameState, action: Dictionary, result: Dictionary) -> void:
-	var job_id := str(action.get("job_id", "accounting_shift"))
-	# 到达这里说明 action.requires 已通过校验，直接录用。
-	state.set_flag("accounting_hired", true)
-	result.changes.append(state.set_flag("accounting_hired", true))
-	result.messages.append("面试通过，你拿到了「%s」的岗位。" % ContentLoader.get_job(job_id).get("name", job_id))
+	var job_id := str(action.get("job_id", ""))
+	# 录用标记由数据声明，缺省按 job_id 推导，避免所有求职行动都写同一个 flag。
+	var hired_flag := str(action.get("hired_flag", job_id + "_hired"))
+	result.changes.append(state.set_flag(hired_flag, true))
+	var job_name := str(ContentLoader.get_job(job_id).get("name", job_id))
+	result.messages.append("面试通过，你拿到了「%s」的岗位。" % job_name)
 
 func _npc_event_pool(npc_id: String) -> Array:
 	var pool: Array = []
@@ -254,11 +255,13 @@ func _npc_event_pool(npc_id: String) -> Array:
 # 工具
 # ---------------------------------------------------------------------------
 
+## 用时段起点判断营业时间。区间取左闭右开：起点正好等于打烊时间视为不开放，
+## 否则 [180,420] 这种"3 点到 7 点"的窗口会连带把 07:00 的早上时段也算进去。
 func _time_ok(state: GameState, action: Dictionary) -> bool:
 	var now := GameConfig.slot_minutes(state.slot)
 	var range_arr: Variant = action.get("available_minutes", null)
 	if range_arr is Array and range_arr.size() >= 2:
-		return now >= int(range_arr[0]) and now <= int(range_arr[1])
+		return now >= int(range_arr[0]) and now < int(range_arr[1])
 	return true
 
 func _time_range_text(action: Dictionary) -> String:

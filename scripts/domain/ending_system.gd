@@ -4,26 +4,37 @@ extends RefCounted
 
 const FALLBACK_ENDING := "steady_summer"
 
-## 返回所有满足条件的结局 id，按优先级降序。
+## 返回所有满足条件的结局 id，按优先级降序；同优先级按 id 排序保证可复现。
 func evaluate(state: GameState) -> Array:
 	var matched: Array = []
 	for ending in ContentLoader.get_endings():
 		if ConditionEvaluator.evaluate(ending.get("conditions", {}), state):
 			matched.append(ending)
-	matched.sort_custom(func(a, b): return int(a.get("priority", 0)) > int(b.get("priority", 0)))
+	matched.sort_custom(func(a, b):
+		var pa := int(a.get("priority", 0))
+		var pb := int(b.get("priority", 0))
+		if pa == pb:
+			return str(a.get("id", "")) < str(b.get("id", ""))
+		return pa > pb
+	)
 	var ids: Array = []
 	for e in matched:
 		ids.append(str(e.get("id", "")))
 	return ids
 
 func best_ending(state: GameState) -> Dictionary:
+	var all := ContentLoader.get_endings()
+	if all.is_empty():
+		return {}
 	var ids := evaluate(state)
-	if ids.is_empty():
-		return ContentLoader.get_endings().filter(func(e): return str(e.get("id", "")) == FALLBACK_ENDING)[0] if not ContentLoader.get_endings().is_empty() else {}
-	for ending in ContentLoader.get_endings():
-		if str(ending.get("id", "")) == str(ids[0]):
+	if not ids.is_empty():
+		for ending in all:
+			if str(ending.get("id", "")) == str(ids[0]):
+				return ending
+	for ending in all:
+		if str(ending.get("id", "")) == FALLBACK_ENDING:
 			return ending
-	return {}
+	return all[0]
 
 func summary(state: GameState, ending: Dictionary, relationship_system: RelationshipSystem) -> Dictionary:
 	var highlights: Array = []

@@ -7,6 +7,10 @@ extends RefCounted
 ## 熬夜（撑到 24:00 自动结束）会产生睡眠债，睡眠债会降低体力上限。
 
 const LAST_SLOT := 3
+## 睡眠恢复量必须为正：睡眠债很高时公式会算出负值，
+## 若直接取用会变成"睡一觉反而掉体力/涨疲劳"的死循环。
+const SLEEP_FATIGUE_FLOOR := 10.0
+const SLEEP_ENERGY_FLOOR := 20.0
 
 var parent_system: ParentSystem
 
@@ -100,12 +104,18 @@ func auto_end_day(state: GameState) -> Dictionary:
 	end["messages"] = msgs
 	return end
 
+## 睡眠恢复量必须为非负，见上方常量说明。
 func _sleep_recovery(state: GameState) -> Dictionary:
 	var debt := int(state.get_flag("sleep_debt"))
 	var fatigue := float(state.player.get("fatigue", 0))
+	# 疲劳恢复到 (50 - 5*debt) 为止；债高时最多只恢复到 SLEEP_FATIGUE_FLOOR。
+	var fatigue_target := clampf(50.0 - float(debt) * 5.0, SLEEP_FATIGUE_FLOOR, 100.0)
+	var fatigue_recover := 0.0
+	if fatigue > 0.0:
+		fatigue_recover = maxf(0.0, minf(fatigue, fatigue_target))
 	return {
-		"fatigue": minf(fatigue, 50.0 - float(debt) * 5.0) if fatigue > 0 else 0.0,
-		"energy": 55.0 - float(debt) * 8.0,
+		"fatigue": fatigue_recover,
+		"energy": maxf(SLEEP_ENERGY_FLOOR, 55.0 - float(debt) * 8.0),
 	}
 
 func _end_day(state: GameState) -> Dictionary:

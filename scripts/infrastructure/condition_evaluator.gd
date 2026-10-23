@@ -8,6 +8,8 @@ extends RefCounted
 
 const KNOWN_OPS := ["gte", "lte", "gt", "lt", "eq", "ne", "between", "in", "has_tag"]
 const KNOWN_ROOTS := ["player", "flags", "npcs", "day", "slot", "phase", "location_id", "computed"]
+const KNOWN_NPC_FIELDS := ["relationship", "trust"]
+const KNOWN_COMPUTED_FIELDS := ["count_high_relationship", "phase"]
 
 static func evaluate(condition: Variant, state) -> bool:
 	if condition == null:
@@ -127,9 +129,20 @@ static func _validate_recursive(condition: Variant, errors: Array) -> void:
 		errors.append("未知操作符: " + op)
 	if cond.has("field"):
 		var path: String = str(cond["field"])
-		var root: String = path.split(".")[0]
+		var parts := path.split(".")
+		var root: String = parts[0]
 		if not KNOWN_ROOTS.has(root):
 			errors.append("未知字段根: " + path)
+		elif root == "player":
+			# 只校验字段名，拼错会静默取到 0，所以必须挡在加载阶段。
+			if parts.size() < 2 or not GameConfig.CLAMPS.has(parts[1]):
+				errors.append("未知玩家字段: " + path)
+		elif root == "npcs":
+			if parts.size() < 3 or not KNOWN_NPC_FIELDS.has(parts[2]):
+				errors.append("未知 NPC 字段: " + path)
+		elif root == "computed":
+			if parts.size() < 2 or not KNOWN_COMPUTED_FIELDS.has(parts[1]):
+				errors.append("未知计算字段: " + path)
 	elif cond.has("flag"):
 		pass
 	elif cond.has("tag"):

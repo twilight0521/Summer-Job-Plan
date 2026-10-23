@@ -91,7 +91,7 @@
       "name": "搬砖 / 仓库",
       "location_id": "hardware_store",
       "available_minutes": [
-        480,
+        420,
         1080
       ],
       "duration_slots": 1,

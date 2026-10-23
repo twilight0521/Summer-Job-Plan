@@ -204,6 +204,8 @@ MVP 支持：
 
 支持 `all`、`any`、`not`、`gte`、`lte`、`eq`、`between`、`in`、`has_tag`。条件解释器只读状态，不产生副作用。
 
+字段路径在加载期校验：`player.*` 必须是 `GameConfig.CLAMPS` 里的字段，`npcs.<id>.*` 只允许 `relationship`/`trust`，`computed.*` 只允许已实现的派生项。拼错的路径不会静默取 0，而是直接报内容错误。
+
 ### 7.2 Action / Job / Event / Ending
 
 ```json
@@ -219,6 +221,12 @@ MVP 支持：
   "risk_event_pool": ["job_customer_01"]
 }
 ```
+
+`available_minutes` 是左闭右开区间，判定时使用当前时段的**起点分钟**：`from <= now < to`。因此 `[180, 420]` 只覆盖凌晨（03:00），不会把 07:00 的早上时段算进去。
+
+`effects` / `cost` 里的键必须是已知玩家字段，或带 `flags.` / `npcs.` 前缀；未知键会在加载期报错，避免拼错后静默写成 flag。
+
+事件没有显式 `location` 时，若带 `npc` 字段则绑定到该角色在 `characters.json` 里声明的 `location`，避免剧情在无关地点弹出。
 
 事件结果只允许声明式 effect：
 

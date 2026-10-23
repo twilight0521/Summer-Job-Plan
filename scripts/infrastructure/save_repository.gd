@@ -2,16 +2,26 @@ extends Node
 ## 本地 JSON 存档。3 个手动档 + 1 个自动档 + 1 个备份档。
 ## 写入采用临时文件 + rename，避免半文件。
 
-const SAVE_DIR := "user://saves/"
+const DEFAULT_SAVE_DIR := "user://saves/"
+const DEFAULT_PROFILE_PATH := "user://profile.json"
 const MANUAL_SLOTS := ["manual_1", "manual_2", "manual_3"]
 const AUTO_SLOT := "auto"
 const BACKUP_SLOT := "backup"
-const PROFILE_PATH := "user://profile.json"
+
+## 目录可替换：测试用 use_isolated_storage() 切到独立目录，避免覆盖玩家真实存档。
+var SAVE_DIR := DEFAULT_SAVE_DIR
+var PROFILE_PATH := DEFAULT_PROFILE_PATH
 
 signal saved(slot: String)
 signal load_failed(slot: String, reason: String)
 
 func _ready() -> void:
+	_ensure_dir()
+
+## 把存档与全局档案切到独立目录（测试专用）。
+func use_isolated_storage(save_dir: String, profile_path: String) -> void:
+	SAVE_DIR = save_dir
+	PROFILE_PATH = profile_path
 	_ensure_dir()
 
 func _ensure_dir() -> void:
@@ -68,12 +78,25 @@ func save(slot: String, state: GameState) -> bool:
 	var dir := DirAccess.open(SAVE_DIR)
 	if dir == null:
 		return false
-	if dir.file_exists(slot + ".json"):
-		dir.remove(slot + ".json")
-	var err := dir.rename(slot + ".json.tmp", slot + ".json")
+	# 先备份旧档再替换：rename 失败时可以还原，避免"删了旧档又没写进新档"。
+	var live_name := slot + ".json"
+	var tmp_name := live_name + ".tmp"
+	var bak_name := live_name + ".bak"
+	if dir.file_exists(bak_name):
+		dir.remove(bak_name)
+	var had_live := dir.file_exists(live_name)
+	if had_live:
+		if dir.rename(live_name, bak_name) != OK:
+			push_error("[SaveRepository] 旧档备份失败: " + live_name)
+			return false
+	var err := dir.rename(tmp_name, live_name)
 	if err != OK:
 		push_error("[SaveRepository] rename 失败: %s" % err)
+		if had_live and dir.file_exists(bak_name):
+			dir.rename(bak_name, live_name)
 		return false
+	if dir.file_exists(bak_name):
+		dir.remove(bak_name)
 	saved.emit(slot)
 	return true
 
@@ -118,7 +141,7 @@ func validate_state_data(state_data: Dictionary) -> String:
 			return "passives 含非字符串项"
 
 	var day := int(state_data.get("day", 1))
-	if day < 1 or day > GameConfig.TOTAL_DAYS + 1:
+	if day < 1 or day > GameConfig.TOTAL_DAYS:
 		return "存档天数超出范围"
 	var slot := int(state_data.get("slot", 0))
 	if slot < 0 or slot > 3:

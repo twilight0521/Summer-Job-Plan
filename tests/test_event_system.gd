@@ -34,10 +34,12 @@ static func run(t) -> void:
 	t.ok(int(state.player.get("trust", 0)) != before_trust, "助人事件改变信任值")
 
 	# 阿凯的发财诱惑会按幸运与关系值展示不同风险分支。
+	# NPC 事件绑定 NPC 常驻地点，这里把地点设到商业街才符合新的触发规则。
 	var fortune := ContentLoader.get_event("npc_akai_04")
 	var lucky_state := GameState.new_run(1001, ContentLoader.characters)
 	lucky_state.day = 21
 	lucky_state.phase = 2
+	lucky_state.location_id = "commercial_street"
 	lucky_state.player["luck"] = 70
 	lucky_state.npcs["akai"]["relationship"] = 40
 	var lucky_choices: Array = events.present(lucky_state, fortune).get("choices", [])
@@ -52,6 +54,7 @@ static func run(t) -> void:
 	var risky_state := GameState.new_run(1002, ContentLoader.characters)
 	risky_state.day = 21
 	risky_state.phase = 2
+	risky_state.location_id = "commercial_street"
 	risky_state.player["luck"] = 20
 	risky_state.npcs["akai"]["relationship"] = 40
 	var risky_choices: Array = events.present(risky_state, fortune).get("choices", [])

@@ -59,6 +59,7 @@ func start_new_game(run_seed: int = -1) -> void:
 	else:
 		RandomSource.use_seed(run_seed)
 	state = GameState.new_run(run_seed, ContentLoader.characters)
+	_reset_pending()
 	tutorial.reset()
 	state_changed.emit()
 	message.emit("暑假开始了。今天想做点什么？")
@@ -69,9 +70,16 @@ func load_game(slot: String) -> bool:
 		message.emit("读取失败：" + str(result.get("error", "")))
 		return false
 	state = result["state"]
+	# 读档必须清掉上一局残留的推进意图，否则会凭空多推进一个时段。
+	_reset_pending()
 	state_changed.emit()
 	message.emit("已读取存档。")
 	return true
+
+func _reset_pending() -> void:
+	_pending_event = {}
+	_pending_slot_advance = false
+	_awaiting_phase_continue = false
 
 func has_active_run() -> bool:
 	return state != null
@@ -392,11 +400,8 @@ func continue_after_phase_summary() -> void:
 	if not _awaiting_phase_continue:
 		return
 	_awaiting_phase_continue = false
-	if state.day > GameConfig.TOTAL_DAYS:
-		_trigger_ending()
-	else:
-		message.emit("第 %d 阶段结束，继续加油。" % state.phase)
-		state_changed.emit()
+	message.emit("第 %d 阶段结束，继续加油。" % state.phase)
+	state_changed.emit()
 
 func _build_phase_summary(phase: int) -> Dictionary:
 	return {
@@ -417,10 +422,14 @@ func _trigger_ending() -> void:
 	if ending.is_empty():
 		message.emit("这个暑假结束了。")
 		return
-	state.unlock_ending(str(ending.get("id", "")))
-	SaveRepository.record_ending(str(ending.get("id", "")))
-	if not SaveRepository.save_auto(state):
+	var ending_id := str(ending.get("id", ""))
+	# 与其它流程一致：在副本上结算，保存成功后才提交。
+	var working := state.duplicate_state()
+	working.unlock_ending(ending_id)
+	SaveRepository.record_ending(ending_id)
+	if not SaveRepository.save_auto(working):
 		message.emit("结局存档失败，仍保留当前结局页面。")
+	state = working
 	var summary := ending_system.summary(state, ending, relationship_system)
 	summary["key_choices"] = ending_system.key_choices(state)
 	game_over.emit(summary)
