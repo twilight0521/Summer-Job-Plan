@@ -7,7 +7,8 @@ static func run(t) -> void:
 	_experience_and_passives(t)
 	_parent_rewards(t)
 	_exam_phase_gate(t)
-	_idle_and_primary_action(t)
+	_idle_and_plans(t)
+	_plan_ui_smoke(t)
 
 static func _sleep_rules(t) -> void:
 	var sched := ScheduleSystem.new()
@@ -89,7 +90,7 @@ static func _exam_phase_gate(t) -> void:
 	s.day = 14
 	t.eq(actions.availability_report(s, "take_exam").get("ok", false), true, "阶段末可以参加考试")
 
-static func _idle_and_primary_action(t) -> void:
+static func _idle_and_plans(t) -> void:
 	var sched := ScheduleSystem.new()
 	var normal := GameState.new_run(211, ContentLoader.characters)
 	var idle_result := sched.idle(normal)
@@ -105,11 +106,32 @@ static func _idle_and_primary_action(t) -> void:
 	t.eq(exhausted.day, 2, "过劳睡眠进入下一天")
 
 	var old_state: GameState = GameFlow.state
-	var library := GameState.new_run(213, ContentLoader.characters)
-	library.location_id = "library"
-	library.slot = 2
-	GameFlow.state = library
-	var primary := GameFlow.primary_location_action()
-	t.eq(primary.get("label", ""), "确认学习", "图书馆主按钮为确认学习")
-	t.eq(primary.get("action_id", ""), "math_study", "图书馆默认数学学习")
+	GameFlow.state = GameState.new_run(213, ContentLoader.characters)
+	t.eq(GameFlow.plan_cards().size(), 3, "短期计划提供三条路线")
+	t.eq(GameFlow.choose_plan("study"), true, "可选择数学计划")
+	t.eq(GameFlow.claim_plan_reward("study"), false, "未达标不能领取计划奖励")
+	GameFlow.state.player["math"] = 45
+	t.eq(GameFlow.claim_plan_reward("study"), true, "达标后可领取计划奖励")
+	t.eq(int(GameFlow.state.player["exp"]), 4, "首段计划奖励经验")
+	t.eq(GameFlow.claim_plan_reward("study"), false, "同一阶段不能重复领取")
+	t.eq(int(GameFlow.state.meta.get("plan_levels", {}).get("study", 0)), 1, "计划阶段保存到状态")
+	t.eq(GameFlow.choose_plan("study"), true, "可以重新追踪下一阶段")
+	t.eq(GameFlow.claim_plan_reward("study"), false, "下一阶段需要新目标")
+	GameFlow.state.player["math"] = 60
+	t.eq(GameFlow.claim_plan_reward("study", "invalid"), false, "非法奖励选项被拒绝")
+	t.eq(GameFlow.claim_plan_reward("study", "share"), true, "可选择分享计划成果")
+	t.eq(int(GameFlow.state.player["exp"]), 4, "分享奖励不会重复增加经验")
+	t.gte(int(GameFlow.state.player["trust"]), 52, "分享成果增加信任")
+	GameFlow.state = old_state
+
+static func _plan_ui_smoke(t) -> void:
+	var old_state: GameState = GameFlow.state
+	GameFlow.state = GameState.new_run(214, ContentLoader.characters)
+	GameFlow.state.meta["intro_seen"] = true
+	var scene: PackedScene = load("res://scenes/game/game.tscn")
+	var screen := scene.instantiate()
+	t.add_child(screen)
+	t.eq(screen.plan_box.get_child_count(), 3, "底栏显示三条计划卡片")
+	t.eq(screen.bottom_panel.size.y > 120.0, true, "计划底栏有足够高度")
+	screen.queue_free()
 	GameFlow.state = old_state

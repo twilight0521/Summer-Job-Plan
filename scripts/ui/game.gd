@@ -1,7 +1,7 @@
 extends Control
-## 日程主界面：HUD + 地点/行动 + 属性/关系 + 日志 + 各类弹窗。
+## 日程主界面：HUD + 地点/行动 + 属性/关系 + 短期计划 + 各类弹窗。
 
-const RESOURCE_ORDER := ["money", "energy", "mood", "hunger", "fatigue", "health"]
+const RESOURCE_ORDER := ["money", "energy", "mood", "hunger", "fatigue", "muscle", "health"]
 const ATTR_ORDER := ["study", "math", "fitness", "communication", "skill", "responsibility"]
 
 var stat_labels: Dictionary = {}
@@ -9,10 +9,10 @@ var attr_labels: Dictionary = {}
 var rel_box: VBoxContainer
 var action_box: VBoxContainer
 var location_box: VBoxContainer
-var log_label: RichTextLabel
 var top_label: Label
 var tip_label: Label
-var primary_action_button: Button
+var feedback_label: Label
+var plan_box: HBoxContainer
 var overlay: Control
 var top_panel: PanelContainer
 var left_panel: PanelContainer
@@ -105,8 +105,8 @@ func _layout_ui() -> void:
 		return
 	var margin := clampf(viewport_size.x * 0.012, 8.0, 20.0)
 	var gap := clampf(viewport_size.x * 0.008, 6.0, 14.0)
-	var top_height := clampf(viewport_size.y * 0.075, 42.0, 64.0)
-	var bottom_height := clampf(viewport_size.y * 0.14, 76.0, 112.0)
+	var top_height := clampf(viewport_size.y * 0.09, 56.0, 72.0)
+	var bottom_height := clampf(viewport_size.y * 0.22, 126.0, 168.0)
 	var content_y := margin + top_height + gap
 	var content_bottom := viewport_size.y - margin - bottom_height - gap
 	var content_height := maxf(120.0, content_bottom - content_y)
@@ -129,10 +129,8 @@ func _layout_ui() -> void:
 	right_panel.size = Vector2(right_width, content_height)
 	bottom_panel.position = Vector2(margin, content_bottom + gap)
 	bottom_panel.size = Vector2(viewport_size.x - margin * 2.0, bottom_height)
-	if log_label != null:
-		log_label.custom_minimum_size = Vector2(maxf(240.0, bottom_panel.size.x - 190.0), 0)
 	if action_box != null:
-		action_box.custom_minimum_size = Vector2(0, maxf(120.0, content_height * 0.45))
+		action_box.custom_minimum_size = Vector2(0, 0)
 
 func _build_top_bar() -> void:
 	top_panel = _make_panel(Rect2(0, 0, 0, 0))
@@ -140,8 +138,16 @@ func _build_top_bar() -> void:
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 14)
 	top_panel.add_child(box)
+	var status := VBoxContainer.new()
+	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status.add_theme_constant_override("separation", 0)
+	box.add_child(status)
 	top_label = Label.new()
-	box.add_child(top_label)
+	status.add_child(top_label)
+	feedback_label = Label.new()
+	feedback_label.add_theme_color_override("font_color", UiTheme.TEXT_DIM)
+	feedback_label.clip_text = true
+	status.add_child(feedback_label)
 	tip_label = Label.new()
 	tip_label.add_theme_color_override("font_color", UiTheme.ACCENT)
 	box.add_child(tip_label)
@@ -220,22 +226,21 @@ func _build_right_panel() -> void:
 func _build_bottom_bar() -> void:
 	bottom_panel = _make_panel(Rect2(0, 0, 0, 0))
 	add_child(bottom_panel)
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 6)
-	bottom_panel.add_child(hbox)
-
-	log_label = RichTextLabel.new()
-	log_label.bbcode_enabled = true
-	log_label.scroll_following = true
-	log_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	log_label.custom_minimum_size = Vector2(380, 0)
-	hbox.add_child(log_label)
-
-	var buttons := VBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 2)
-	hbox.add_child(buttons)
-	_add_small_button(buttons, "发呆 / 随机", func(): GameFlow.idle_until_next_slot())
-	primary_action_button = _add_small_button(buttons, "确认行动", _on_primary_action_pressed)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 4)
+	bottom_panel.add_child(content)
+	var heading := HBoxContainer.new()
+	content.add_child(heading)
+	var title := Label.new()
+	title.text = "— 这段时间想做什么"
+	title.add_theme_color_override("font_color", UiTheme.ACCENT)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.add_child(title)
+	_add_small_button(heading, "发呆 / 下一时段", func(): GameFlow.idle_until_next_slot())
+	plan_box = HBoxContainer.new()
+	plan_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	plan_box.add_theme_constant_override("separation", 8)
+	content.add_child(plan_box)
 
 func _section(text: String) -> Label:
 	var label := Label.new()
@@ -296,7 +301,7 @@ func _refresh() -> void:
 
 	_refresh_locations()
 	_refresh_actions()
-	_refresh_primary_action()
+	_refresh_plans()
 	_refresh_relationships()
 	if not _modal_open:
 		_focus_first_action()
@@ -355,20 +360,72 @@ func _refresh_actions() -> void:
 				child.grab_focus()
 				break
 
-func _refresh_primary_action() -> void:
-	if primary_action_button == null:
-		return
-	var candidate := GameFlow.primary_location_action()
-	primary_action_button.disabled = candidate.is_empty()
-	primary_action_button.text = str(candidate.get("label", "确认行动")) if not candidate.is_empty() else "当前无可确认行动"
-	if not candidate.is_empty():
-		primary_action_button.tooltip_text = _preview_tooltip(candidate.get("preview", {}))
+func _refresh_plans() -> void:
+	_clear_children(plan_box)
+	for card in GameFlow.plan_cards():
+		var panel := PanelContainer.new()
+		var style := _panel_style()
+		style.bg_color = UiTheme.PANEL_LIGHT if bool(card["active"]) else UiTheme.PANEL
+		style.border_color = UiTheme.ACCENT if bool(card["active"]) else Color("121319")
+		panel.add_theme_stylebox_override("panel", style)
+		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		plan_box.add_child(panel)
+		var content := VBoxContainer.new()
+		content.add_theme_constant_override("separation", 2)
+		panel.add_child(content)
+		var name := Label.new()
+		name.text = "%s  ·  %s" % [card["name"], "已完成" if bool(card["complete"]) else "第 %d 段" % (int(card["level"]) + 1)]
+		name.add_theme_color_override("font_color", UiTheme.ACCENT if bool(card["active"]) else UiTheme.TEXT)
+		content.add_child(name)
+		var progress := Label.new()
+		progress.text = "%d / %d" % [int(card["value"]), int(card["target"])] if not bool(card["complete"]) else "这条路已经走通"
+		content.add_child(progress)
+		var hint := Label.new()
+		hint.text = str(card["hint"])
+		hint.clip_text = true
+		hint.add_theme_color_override("font_color", UiTheme.TEXT_DIM)
+		content.add_child(hint)
+		var button := Button.new()
+		if bool(card["ready"]):
+			button.text = "看看这段路的收获"
+			button.pressed.connect(_show_plan_milestone.bind(card))
+		elif bool(card["complete"]):
+			button.text = "已完成"
+			button.disabled = true
+		elif bool(card["active"]):
+			button.text = "正在追踪 · 完成后领取经验"
+			button.disabled = true
+		else:
+			button.text = "选择这条路线"
+			button.pressed.connect(GameFlow.choose_plan.bind(str(card["id"])))
+		content.add_child(button)
 
-func _on_primary_action_pressed() -> void:
-	var candidate := GameFlow.primary_location_action()
-	if candidate.is_empty():
-		return
-	_on_action_pressed(str(candidate.get("action_id", "")), candidate.get("preview", {}))
+func _show_plan_milestone(card: Dictionary) -> void:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	var title := Label.new()
+	title.text = "「%s」· 第 %d 段" % [card["name"], int(card["level"]) + 1]
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", UiTheme.ACCENT)
+	box.add_child(title)
+	var story := Label.new()
+	story.text = str(card["story"])
+	story.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	story.custom_minimum_size = Vector2(340, 0)
+	box.add_child(story)
+	var exp_button := Button.new()
+	exp_button.text = "记下心得 · 经验 +%d" % int(card["exp_reward"])
+	exp_button.pressed.connect(_claim_plan.bind(str(card["id"]), "exp"))
+	box.add_child(exp_button)
+	var share_button := Button.new()
+	share_button.text = "和人分享 · 心情 +%d、信任 +2" % (6 + int(card["level"]) * 2)
+	share_button.pressed.connect(_claim_plan.bind(str(card["id"]), "share"))
+	box.add_child(share_button)
+	_show_modal(box)
+
+func _claim_plan(plan_id: String, reward_kind: String) -> void:
+	if GameFlow.claim_plan_reward(plan_id, reward_kind):
+		_close_modal()
 
 func _refresh_relationships() -> void:
 	_clear_children(rel_box)
@@ -396,7 +453,7 @@ func _format_value(field: String, value: Variant) -> String:
 
 func _color_for(field: String, value: Variant) -> Color:
 	match field:
-		"health", "mood", "energy":
+		"health", "mood", "energy", "muscle":
 			var v := float(value)
 			if v <= 25.0:
 				return UiTheme.BAD
@@ -830,17 +887,9 @@ func _kv_label(key: String, value: String) -> Label:
 	return label
 
 func _on_message(text: String) -> void:
-	_log_line(_escape_bbcode(text))
-
-## 内容文案直接进 RichTextLabel 会被当成 BBCode 解析，方括号需要转义。
-func _escape_bbcode(text: String) -> String:
-	return text.replace("[", "[lb]")
-
-## 已经带好 BBCode 标记的文本走这里，不做转义。
-func _log_line(text: String) -> void:
-	if log_label == null:
-		return
-	log_label.append_text("[color=#a9a79f]·[/color] " + text + "\n")
+	if feedback_label != null:
+		feedback_label.text = text.replace("\n", " · ")
+		feedback_label.tooltip_text = text
 
 func _show_toast(changes: Array) -> void:
 	if changes.is_empty():
@@ -854,10 +903,9 @@ func _show_toast(changes: Array) -> void:
 			continue
 		var field := str(change.get("field", ""))
 		var field_name := _change_field_name(field)
-		var color := "#7ec96a" if delta > 0 else "#e06c75"
-		parts.append("[color=%s]%s %+d[/color]" % [color, field_name, int(delta)])
+		parts.append("%s %+d" % [field_name, int(delta)])
 	if not parts.is_empty():
-		_log_line("变化：" + "，".join(parts))
+		_on_message("变化：" + "，".join(parts))
 
 func _change_field_name(field: String) -> String:
 	var meta: Dictionary = GameConfig.FIELD_META.get(field, {})

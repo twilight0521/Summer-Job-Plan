@@ -29,6 +29,13 @@ var _pending_event: Dictionary = {}
 var _pending_slot_advance: bool = false
 var _awaiting_phase_continue: bool = false
 
+const PLAN_ORDER := ["work", "study", "neighbors"]
+const PLAN_DATA := {
+	"work": {"name": "攒一笔钱", "field": "money", "targets": [500, 1000, 2000], "hint": "去店里接班，先把生活费攒起来", "stories": ["数完第一次自己挣来的钱，你开始觉得这个暑假有了分量。", "工资攒成一沓，老板开始把更重要的班次交给你。", "这笔钱足以改变开学后的安排。你想怎么记住它？"]},
+	"study": {"name": "数学突围", "field": "math", "targets": [45, 60, 80], "hint": "到图书馆学数学，争取考试机会", "stories": ["昨天还看不懂的题，今天突然有了思路。", "你能给别人讲清一道题了，考试不再像一道墙。", "这本练习册翻到最后一页，你知道自己真的坚持下来了。"]},
+	"neighbors": {"name": "赢得信任", "field": "trust", "targets": [60, 75, 90], "hint": "与家人、街坊互动，留意事件选择", "stories": ["有人开始记得你的名字，顺手给你留了一句好话。", "街坊遇到麻烦时，会先来问问你的意见。", "镇上的人说起你，已经有了属于你的故事。"]},
+}
+
 func _ready() -> void:
 	_register_input_actions()
 	action_system = ActionSystem.new()
@@ -163,6 +170,77 @@ func action_preview(action_id: String) -> Dictionary:
 	if state == null:
 		return {}
 	return action_system.preview(state, action_id)
+
+## 玩家自己挑一条近期路线。进度取当前状态，奖励每级只能领一次并随存档保存。
+func plan_cards() -> Array:
+	if state == null:
+		return []
+	var cards: Array = []
+	var active := str(state.meta.get("active_plan", ""))
+	var levels: Dictionary = state.meta.get("plan_levels", {})
+	for plan_id in PLAN_ORDER:
+		var cfg: Dictionary = PLAN_DATA[plan_id]
+		var level := clampi(int(levels.get(plan_id, 0)), 0, 3)
+		var targets: Array = cfg["targets"]
+		var target := int(targets[mini(level, targets.size() - 1)])
+		var value := int(state.player.get(str(cfg["field"]), 0))
+		cards.append({
+			"id": plan_id, "name": cfg["name"], "hint": cfg["hint"],
+			"value": value, "target": target, "level": level,
+			"story": cfg["stories"][mini(level, targets.size() - 1)],
+			"exp_reward": 4 + level * 2,
+			"active": active == plan_id, "complete": level >= targets.size(),
+			"ready": active == plan_id and level < targets.size() and value >= target,
+		})
+	return cards
+
+func choose_plan(plan_id: String) -> bool:
+	if state == null or not PLAN_DATA.has(plan_id) or has_pending_event() or is_game_finished():
+		return false
+	var levels: Dictionary = state.meta.get("plan_levels", {})
+	if int(levels.get(plan_id, 0)) >= PLAN_DATA[plan_id]["targets"].size():
+		return false
+	var working := state.duplicate_state()
+	working.meta["active_plan"] = plan_id
+	if not SaveRepository.save_auto(working):
+		message.emit("保存失败，计划未更改。")
+		return false
+	state = working
+	message.emit("这段时间，先试着%s。" % str(PLAN_DATA[plan_id]["name"]))
+	state_changed.emit()
+	return true
+
+func claim_plan_reward(plan_id: String, reward_kind: String = "exp") -> bool:
+	if state == null or has_pending_event() or is_game_finished() or str(state.meta.get("active_plan", "")) != plan_id:
+		return false
+	if reward_kind != "exp" and reward_kind != "share":
+		return false
+	var cfg: Dictionary = PLAN_DATA.get(plan_id, {})
+	if cfg.is_empty():
+		return false
+	var levels: Dictionary = state.meta.get("plan_levels", {})
+	var level := int(levels.get(plan_id, 0))
+	var targets: Array = cfg["targets"]
+	if level >= targets.size() or int(state.player.get(str(cfg["field"]), 0)) < int(targets[level]):
+		return false
+	var working := state.duplicate_state()
+	var next_levels: Dictionary = working.meta.get("plan_levels", {}).duplicate()
+	next_levels[plan_id] = level + 1
+	working.meta["plan_levels"] = next_levels
+	working.meta["active_plan"] = ""
+	if reward_kind == "exp":
+		working.add_player("exp", 4 + level * 2, "短期计划奖励")
+	else:
+		working.add_player("mood", 6 + level * 2, "分享计划成果")
+		working.add_player("trust", 2, "分享计划成果")
+	if not SaveRepository.save_auto(working):
+		message.emit("保存失败，奖励未领取。")
+		return false
+	state = working
+	var reward_text := "%d 经验" % (4 + level * 2) if reward_kind == "exp" else "%d 心情、2 信任" % (6 + level * 2)
+	message.emit("完成「%s」第 %d 阶段，获得%s。再选一条计划吧。" % [cfg["name"], level + 1, reward_text])
+	state_changed.emit()
+	return true
 
 func is_awaiting_phase_continue() -> bool:
 	return _awaiting_phase_continue
@@ -398,38 +476,6 @@ func idle_until_next_slot() -> void:
 	if result.get("ended_day", false):
 		_after_day_end(result)
 	state_changed.emit()
-
-## 当前地点按常用路线给出一个“确认”按钮对应的行动。
-func primary_location_action() -> Dictionary:
-	if state == null:
-		return {}
-	var preferred: Array = []
-	match state.location_id:
-		"breakfast_shop": preferred = ["breakfast_shift", "eat_breakfast"]
-		"library": preferred = ["math_study", "study_library"]
-		"home": preferred = ["tutor_shift", "study_home", "rest"]
-		"convenience_store": preferred = ["eat_convenience"]
-		"tea_shop": preferred = ["tea_shop_shift", "socialize"]
-		"gym_park": preferred = ["exercise"]
-		"hardware_store": preferred = ["construction_shift", "collect_scrap"]
-		"bank_office": preferred = ["accounting_shift", "apply_accounting"]
-		"commercial_street": preferred = ["stroll", "socialize"]
-	for action_id in preferred:
-		if not ContentLoader.get_action(action_id).is_empty() and action_system.is_available(state, action_id):
-			return {"action_id": action_id, "label": _primary_action_label(action_id), "preview": action_preview(action_id)}
-	return {}
-
-func _primary_action_label(action_id: String) -> String:
-	match action_id:
-		"breakfast_shift", "tea_shop_shift", "construction_shift", "tutor_shift", "accounting_shift": return "确认工作"
-		"math_study", "study_library", "study_home", "take_exam": return "确认学习"
-		"exercise": return "确认锻炼"
-		"stroll", "socialize": return "确认社交"
-		"eat_breakfast", "eat_convenience": return "确认吃饭"
-		"rest": return "确认休息"
-		"collect_scrap": return "确认捡废品"
-		"apply_accounting": return "确认申请"
-	return "确认行动"
 
 func sleep_now() -> void:
 	if state == null:
