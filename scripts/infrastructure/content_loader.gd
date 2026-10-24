@@ -178,6 +178,15 @@ func _validate() -> void:
 		var loc_id: String = _reference_id(event.get("location", ""))
 		if loc_id != "" and not locations.has(loc_id):
 			load_errors.append("事件 %s 引用了不存在的地点 %s" % [event_id, loc_id])
+		if event.has("conditions"):
+			for condition_error in ConditionEvaluator.validate(event["conditions"]):
+				load_errors.append("事件 %s 条件错误: %s" % [event_id, condition_error])
+		for choice in event.get("choices", []):
+			_validate_effect_entry("事件 %s 选项 %s" % [event_id, choice.get("id", "?")], choice)
+		for choice in event.get("choices", []):
+			if choice.has("conditions"):
+				for condition_error in ConditionEvaluator.validate(choice["conditions"]):
+					load_errors.append("事件 %s 选项 %s 条件错误: %s" % [event_id, choice.get("id", "?"), condition_error])
 
 	# 角色常驻地点与阶段事件存在
 	for char_id in characters:
@@ -195,6 +204,12 @@ func _validate() -> void:
 		var errs := ConditionEvaluator.validate(cond)
 		for e in errs:
 			load_errors.append("结局 %s 条件错误: %s" % [ending.get("id", "?"), e])
+	_validate_conditions("行动", actions, ["requires", "conditions"])
+	_validate_conditions("工作", jobs, ["requires", "conditions"])
+	_validate_conditions("考试", exams, ["requires", "conditions", "unlock_requires"])
+	for exam_id in exams:
+		for choice in exams[exam_id].get("choices", []):
+			_validate_effect_entry("考试 %s 选项 %s" % [exam_id, choice.get("id", "?")], choice)
 
 	# 数值改动字段必须存在：否则打错字会被静默写成一个 flag。
 	_validate_effects("actions", actions)
@@ -212,6 +227,18 @@ func _validate_effects(label: String, entries: Dictionary) -> void:
 		var entry: Variant = entries[entry_id]
 		if entry is Dictionary:
 			_validate_effect_entry("%s/%s" % [label, entry_id], entry)
+
+func _validate_conditions(label: String, entries: Dictionary, keys: Array) -> void:
+	for entry_id in entries:
+		var entry: Dictionary = entries[entry_id]
+		for key in keys:
+			if entry.has(key):
+				for condition_error in ConditionEvaluator.validate(entry[key]):
+					load_errors.append("%s %s 条件错误: %s" % [label, entry_id, condition_error])
+		for choice in entry.get("choices", []):
+			if choice.has("conditions"):
+				for condition_error in ConditionEvaluator.validate(choice["conditions"]):
+					load_errors.append("%s %s 选项 %s 条件错误: %s" % [label, entry_id, choice.get("id", "?"), condition_error])
 
 func _validate_effect_entry(owner: String, entry: Dictionary) -> void:
 	for container in EFFECT_CONTAINERS:

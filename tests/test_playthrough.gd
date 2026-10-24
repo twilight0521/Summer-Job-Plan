@@ -116,9 +116,12 @@ static func _run_to_ending(t) -> void:
 	t.eq(int(GameFlow.state.phase), 4, "结束时处于第 4 阶段")
 	# 第 15 节第 4 项：中途关闭后能从最近自动保存继续
 	t.ok(SaveRepository.has_save(SaveRepository.AUTO_SLOT), "通关过程写入了自动存档")
-	# 重新读取自动存档，确认状态可恢复并继续
-	t.eq(GameFlow.load_game(SaveRepository.AUTO_SLOT), true, "自动存档可读取")
+	# 通关状态持久化后，不允许从自动档继续已结束的一局。
+	var active_before_failed_load := GameFlow.state
+	t.eq(GameFlow.load_game(SaveRepository.AUTO_SLOT), false, "通关自动档不能继续游戏")
+	t.eq(GameFlow.state, active_before_failed_load, "拒绝通关档时保留当前游戏状态")
 	if GameFlow.state != null:
 		t.eq(int(GameFlow.state.day), 60, "读档后恢复到第 60 天")
 		t.eq(int(GameFlow.state.phase), 4, "读档后恢复到第 4 阶段")
 		t.ok(not GameFlow.state.unlocked_endings.is_empty(), "读档后保留已解锁结局")
+		t.eq(GameFlow.is_game_finished(), true, "通关標記保存在自動檔")

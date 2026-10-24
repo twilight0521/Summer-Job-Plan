@@ -20,6 +20,9 @@ var center_panel: PanelContainer
 var right_panel: PanelContainer
 var bottom_panel: PanelContainer
 var _modal_open: bool = false
+## 强制选择类弹窗（事件 / 阶段总结 / 结局）不允许 Esc 关闭：
+## 关掉会跳过事件且留下未决的 pending 状态，导致时段推进错乱。
+var _modal_dismissible: bool = true
 var _last_phase: int = 0
 var _last_phase_summary: Dictionary = {}
 
@@ -29,6 +32,8 @@ func _ready() -> void:
 	_connect_flow()
 	if GameFlow.state == null:
 		GameFlow.start_new_game()
+	else:
+		GameFlow.resume_pending_event()
 	_refresh()
 
 func _connect_flow() -> void:
@@ -419,6 +424,14 @@ func _on_action_pressed(action_id: String, preview: Dictionary) -> void:
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.custom_minimum_size = Vector2(300, 0)
 	box.add_child(desc)
+	var selected_action := ContentLoader.get_action(action_id)
+	if GameFlow.state.slot >= 3 and int(selected_action.get("duration_slots", 1)) > 0 and str(selected_action.get("handler", "")) != "sleep":
+		var late_warning := Label.new()
+		late_warning.text = "晚上行动后将直接熬夜进入明天：健康 -3、疲劳 +10，并增加睡眠债。选择“睡觉”可正常恢复。"
+		late_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		late_warning.add_theme_color_override("font_color", UiTheme.BAD)
+		late_warning.custom_minimum_size = Vector2(300, 0)
+		box.add_child(late_warning)
 
 	var cost: Dictionary = preview.get("cost", {})
 	if not cost.is_empty():
@@ -467,11 +480,14 @@ func _on_event_requested(view: Dictionary) -> void:
 		btn.text = str(choice.get("text", ""))
 		btn.pressed.connect(_choose_event.bind(str(choice.get("id", ""))))
 		box.add_child(btn)
-	_show_modal(box)
+	_show_modal(box, false)
 
 func _choose_event(choice_id: String) -> void:
-	_close_modal()
-	GameFlow.choose_event_choice(choice_id)
+	# 只有结算成功才关弹窗；失败（如付不起钱）时保留弹窗换一个选项。
+	if GameFlow.choose_event_choice(choice_id):
+		# 结算期间可能同步打开阶段总结或结局，不能再关闭新弹窗。
+		if not GameFlow.is_game_finished() and not GameFlow._awaiting_phase_continue:
+			_close_modal()
 
 func _on_event_resolved(result: Dictionary) -> void:
 	var text := str(result.get("result_text", ""))
@@ -496,7 +512,11 @@ func _on_exam_requested(exams: Array) -> void:
 	for exam in exams:
 		var exam_id := str(exam.get("id", ""))
 		var label := Label.new()
-		label.text = "%s（及格线 %d）" % [exam.get("name", exam_id), int(exam.get("pass_score", 60))]
+		var cost: Dictionary = exam.get("cost", {})
+		var cost_text := ""
+		if cost.has("energy"):
+			cost_text = " · 体力 -%d" % int(absf(float(cost["energy"])))
+		label.text = "%s（及格线 %d%s）" % [exam.get("name", exam_id), int(exam.get("pass_score", 60)), cost_text]
 		box.add_child(label)
 		for choice in exam.get("choices", []):
 			var btn := Button.new()
@@ -522,6 +542,7 @@ func _on_exam_result(result: Dictionary) -> void:
 		lines.append("· " + str(line))
 	lines.append("结果：" + ("通过！" if bool(result.get("passed", false)) else "未通过"))
 	_on_message("\n".join(lines))
+	_show_toast(result.get("changes", []))
 
 # ---------------------------------------------------------------------------
 # 商店
@@ -590,7 +611,7 @@ func _on_phase_summary(phase: int, summary: Dictionary) -> void:
 		GameFlow.continue_after_phase_summary()
 	)
 	box.add_child(ok)
-	_show_modal(box)
+	_show_modal(box, false)
 
 func _on_unlock_passive(passive_id: String) -> void:
 	GameFlow.unlock_passive(passive_id)
@@ -649,14 +670,15 @@ func _on_game_over(summary: Dictionary) -> void:
 	to_title.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/title/title.tscn"))
 	buttons.add_child(to_title)
 
-	_show_modal(box)
+	_show_modal(box, false)
 
 # ---------------------------------------------------------------------------
 # 弹窗 / 提示
 # ---------------------------------------------------------------------------
 
-func _show_modal(content: Control) -> void:
+func _show_modal(content: Control, dismissible: bool = true) -> void:
 	_close_modal()
+	_modal_dismissible = dismissible
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.55)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -691,6 +713,7 @@ func _close_modal() -> void:
 	_clear_children(overlay)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_modal_open = false
+	_modal_dismissible = true
 	_set_background_focus(true)
 
 ## 先摘出再释放：queue_free 的节点要到帧末才真正消失，
@@ -778,7 +801,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	var command := InputRouter.command_for_input(event)
 	if command == InputRouter.Command.CANCEL:
 		if _modal_open:
-			_close_modal()
+			# 强制选择类弹窗（事件/阶段总结/结局）不接受 Esc 关闭。
+			if _modal_dismissible:
+				_close_modal()
 		else:
 			get_tree().change_scene_to_file("res://scenes/title/title.tscn")
 		get_viewport().set_input_as_handled()

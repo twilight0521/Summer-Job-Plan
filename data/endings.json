@@ -16,6 +16,20 @@
       "highlights": ["数学能力", "责任感", "会计实习"]
     },
     {
+      "id": "night_shift_partner",
+      "name": "夜班猫的合伙人",
+      "priority": 98,
+      "tagline": "这个夏天的深夜，成了你们共同计划的起点。",
+      "description": "你和夜班猫决定把那个小生意认真做下去。暑假结束时，第一份计划已经写满了修改痕迹，你也多了一位真正信任的伙伴。",
+      "conditions": {
+        "all": [
+          { "flag": "business_partner", "op": "eq", "value": true },
+          { "field": "flags.night_cat_met", "op": "eq", "value": true }
+        ]
+      },
+      "highlights": ["夜班猫", "合伙计划", "信任"]
+    },
+    {
       "id": "neighborhood_fame",
       "name": "街坊都认识你",
       "priority": 95,

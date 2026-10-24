@@ -1,6 +1,17 @@
 {
   "actions": [
     {
+      "id": "clinic_visit",
+      "name": "社区诊所复查",
+      "location_id": "commercial_street",
+      "available_minutes": [540, 1020],
+      "duration_slots": 1,
+      "handler": "action",
+      "cost": { "money": 35, "energy": 5 },
+      "effects": { "health": 12, "mood": 2 },
+      "description": "花 ¥35 做基础处理，健康 +12、心情 +2。"
+    },
+    {
       "id": "study_home",
       "name": "在家自习",
       "location_id": "home",
@@ -168,7 +179,7 @@
         "money": 10
       },
       "effects": {},
-      "description": "花 ¥10 碰碰运气。幸运值高时中奖档位略好，但连买会上头。"
+      "description": "花 ¥10 碰碰运气。中奖概率固定；当天买到第三张起会降低心情并在日结时被父母训话。"
     },
     {
       "id": "study_library",

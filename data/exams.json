@@ -3,6 +3,7 @@
     {
       "id": "math_basic",
       "name": "基础数学考试",
+      "cost": { "energy": 15 },
       "unlock_requires": {
         "all": [
           { "field": "flags.library_math_count", "op": "gte", "value": 5 }
@@ -40,6 +41,7 @@
     {
       "id": "accounting_entry",
       "name": "会计入门考试",
+      "cost": { "energy": 15 },
       "unlock_requires": {
         "all": [
           { "field": "player.math", "op": "gte", "value": 60 },

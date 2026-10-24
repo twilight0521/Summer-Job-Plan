@@ -53,6 +53,7 @@ func read_info(slot: String) -> Dictionary:
 	return {
 		"day": int(state.get("day", 1)),
 		"slot": int(state.get("slot", 0)),
+		"finished": bool(state.get("meta", {}).get("finished", false)),
 		"saved_at": data.get("saved_at", ""),
 		"content_version": data.get("content_version", ""),
 	}
@@ -121,7 +122,9 @@ func load_slot(slot: String) -> Dictionary:
 		return _recover_or_fail(slot, schema_error)
 	var migrated := _migrate(data, version)
 	var state := GameState.from_dict(migrated.get("state", {}))
-	RandomSource.use_seed(state.seed)
+	# 用「种子 + 天数 + 时段」派生新随机流，而不是重置回开局种子：
+	# 否则读档会让本局随机序列从头重演，同一存档反复读取可刷彩票/事件。
+	RandomSource.use_seed(state.seed + state.day * 100003 + state.slot * 1009)
 	return {"ok": true, "state": state}
 
 ## 校验存档 state 的类型、范围与引用，返回错误文本（空串表示通过）。

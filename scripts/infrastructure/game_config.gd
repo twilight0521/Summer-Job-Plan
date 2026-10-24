@@ -133,6 +133,14 @@ func slot_minutes(slot: int) -> int:
 		return SLOT_START_MINUTES[slot]
 	return 0
 
+## 时段覆盖的分钟区间终点（左闭右开）：晚上时段一直延伸到 24:00。
+func slot_end_minutes(slot: int) -> int:
+	if slot < 0:
+		return 0
+	if slot >= SLOT_START_MINUTES.size() - 1:
+		return 1440
+	return SLOT_START_MINUTES[slot + 1]
+
 func minutes_to_clock(minutes: int) -> String:
 	var m := int(minutes) % 1440
 	var h := m / 60

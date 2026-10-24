@@ -69,9 +69,14 @@ func load_game(slot: String) -> bool:
 	if not result.get("ok", false):
 		message.emit("读取失败：" + str(result.get("error", "")))
 		return false
-	state = result["state"]
-	# 读档必须清掉上一局残留的推进意图，否则会凭空多推进一个时段。
-	_reset_pending()
+	var loaded_state: GameState = result["state"]
+	if bool(loaded_state.meta.get("finished", false)):
+		message.emit("这局游戏已经结束。")
+		return false
+	state = loaded_state
+	_pending_event = state.meta.get("pending_event", {})
+	_pending_slot_advance = bool(state.meta.get("pending_slot_advance", false))
+	_awaiting_phase_continue = false
 	state_changed.emit()
 	message.emit("已读取存档。")
 	return true
@@ -83,6 +88,34 @@ func _reset_pending() -> void:
 
 func has_active_run() -> bool:
 	return state != null
+
+func is_game_finished() -> bool:
+	return state != null and bool(state.meta.get("finished", false))
+
+func has_pending_event() -> bool:
+	return not _pending_event.is_empty()
+
+## 游戏场景完成信号连接后调用，避免标题场景加载时丢失事件弹窗。
+func resume_pending_event() -> bool:
+	if _pending_event.is_empty() or state == null:
+		return false
+	if not EventSystem.EVENT_FIRED_PREFIX.is_empty() and bool(state.get_flag(EventSystem.EVENT_FIRED_PREFIX + str(_pending_event.get("id", "")))):
+		return _clear_stale_pending_event()
+	var view := event_system.present(state, _pending_event)
+	if view.get("choices", []).is_empty():
+		return _clear_stale_pending_event()
+	event_requested.emit(view)
+	return true
+
+func _clear_stale_pending_event() -> bool:
+	message.emit("待处理事件已失效，已清除未完成的推进。")
+	_pending_event = {}
+	_pending_slot_advance = false
+	state.meta.erase("pending_event")
+	state.meta.erase("pending_slot_advance")
+	SaveRepository.save_auto(state)
+	state_changed.emit()
+	return false
 
 # ---------------------------------------------------------------------------
 # 行动
@@ -101,6 +134,10 @@ func action_preview(action_id: String) -> Dictionary:
 func perform_action(action_id: String) -> Dictionary:
 	if state == null:
 		return {}
+	# 有事件在等待选择时不接受新行动，避免 pending 状态被绕过后错乱。
+	if not _pending_event.is_empty():
+		message.emit("请先处理眼前的事件。")
+		return {"ok": false, "messages": ["请先处理眼前的事件。"]}
 	var action := ContentLoader.get_action(action_id)
 	var consumes := int(action.get("duration_slots", 1)) > 0
 	# 幂等保护：只有消耗时段的行动才记录实例 ID，商店等界面行动可重复打开。
@@ -136,8 +173,8 @@ func perform_action(action_id: String) -> Dictionary:
 	if result.get("special", "") == "exam":
 		var exams := exam_system.available_exams(state)
 		if exams.is_empty():
+			# 入口行动本身不消耗任何资源，这里只提示，不再空推一个时段。
 			message.emit("目前没有可以参加的考试。")
-			_advance_slot()
 		else:
 			exam_requested.emit(exams)
 		state_changed.emit()
@@ -151,7 +188,6 @@ func perform_action(action_id: String) -> Dictionary:
 
 	# 事件优先于时段推进
 	if _try_trigger_event(result.get("event_pool", [])):
-		_pending_slot_advance = true
 		state_changed.emit()
 		return result
 
@@ -159,27 +195,32 @@ func perform_action(action_id: String) -> Dictionary:
 	state_changed.emit()
 	return result
 
-func choose_event_choice(choice_id: String) -> void:
+## 返回是否结算成功；失败时 UI 应保留事件弹窗让玩家换一个选项。
+func choose_event_choice(choice_id: String) -> bool:
 	if _pending_event.is_empty():
-		return
+		return false
 	# 事务化：在副本上结算并保存成功后才提交。
 	var working := state.duplicate_state()
 	var result := event_system.resolve(working, _pending_event, choice_id)
 	if not result.get("ok", false):
 		message.emit(str(result.get("result_text", "无法选择该选项")))
 		state_changed.emit()
-		return
+		return false
+	var advance_after_event := _pending_slot_advance
+	working.meta.erase("pending_event")
+	working.meta.erase("pending_slot_advance")
 	if not SaveRepository.save_auto(working):
 		message.emit("保存失败，选择未生效。")
 		state_changed.emit()
-		return
+		return false
 	state = working
 	_pending_event = {}
 	event_resolved.emit(result)
-	if _pending_slot_advance:
+	if advance_after_event:
 		_pending_slot_advance = false
 		_advance_slot()
 	state_changed.emit()
+	return true
 
 func take_exam(exam_id: String, choice_id: String) -> void:
 	if state == null:
@@ -206,6 +247,16 @@ func buy_item(item_id: String) -> bool:
 	var item := ContentLoader.get_item(item_id)
 	if item.is_empty():
 		return false
+	# 非消耗品（护具/文具/衣服等）不允许重复购买：
+	# 之前可以无限买「新衣服」刷心情，破坏资源循环。
+	if not bool(item.get("consumable", true)):
+		var effects: Variant = item.get("effects", {})
+		if effects is Dictionary:
+			for key in effects:
+				var field := str(key)
+				if field.begins_with("flags.") and bool(state.get_flag(field.substr("flags.".length()))):
+					message.emit("你已经拥有「%s」了。" % str(item.get("name", item_id)))
+					return false
 	var price := int(item.get("price", 0))
 	if state.has_passive("passive_frugal"):
 		price = int(round(price * 0.8))
@@ -260,6 +311,9 @@ func move_to(location_id: String) -> void:
 		return
 	if state.location_id == location_id:
 		return
+	if not location_is_open(location_id):
+		message.emit("「%s」现在还没开门。" % loc.get("name", location_id))
+		return
 	if float(state.player.get("energy", 0)) < float(GameConfig.MOVE_ENERGY_COST):
 		message.emit("体力不足，无法移动。")
 		return
@@ -287,6 +341,9 @@ func rest_until_next_slot() -> void:
 ## 不安排具体行动时的默认选择：发呆消磨一个时段；状态过差则自动睡着。
 func idle_until_next_slot() -> void:
 	if state == null:
+		return
+	if not _pending_event.is_empty():
+		message.emit("请先处理眼前的事件。")
 		return
 	var working := state.duplicate_state()
 	var result := schedule_system.idle(working)
@@ -349,7 +406,19 @@ func _try_trigger_event(pool: Variant) -> bool:
 		event = event_system.pick_event(state)
 	if event.is_empty():
 		return false
+	# 所有选项都被条件过滤掉时不弹窗，避免出现无法关闭的事件界面。
+	if event_system.present(state, event).get("choices", []).is_empty():
+		return false
 	_pending_event = event
+	_pending_slot_advance = true
+	state.meta["pending_event"] = event.duplicate(true)
+	state.meta["pending_slot_advance"] = true
+	if not SaveRepository.save_auto(state):
+		state.meta.erase("pending_event")
+		state.meta.erase("pending_slot_advance")
+		_pending_event = {}
+		_pending_slot_advance = false
+		return false
 	event_requested.emit(event_system.present(state, event))
 	return true
 
@@ -426,6 +495,7 @@ func _trigger_ending() -> void:
 	# 与其它流程一致：在副本上结算，保存成功后才提交。
 	var working := state.duplicate_state()
 	working.unlock_ending(ending_id)
+	working.meta["finished"] = true
 	SaveRepository.record_ending(ending_id)
 	if not SaveRepository.save_auto(working):
 		message.emit("结局存档失败，仍保留当前结局页面。")

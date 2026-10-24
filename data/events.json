@@ -97,6 +97,7 @@
       "days": [1, 59],
       "time": { "from": "09:00", "to": "21:00" },
       "location": "library",
+      "once": true,
       "weight": 7,
       "choices": [
         { "id": "a", "text": "戴上耳机专注学习", "result_text": "你进入了状态。", "effects": { "study": 2, "mood": -2 } },
@@ -111,6 +112,7 @@
       "days": [1, 59],
       "time": { "from": "06:00", "to": "09:00" },
       "location": "gym_park",
+      "once": true,
       "weight": 8,
       "choices": [
         { "id": "a", "text": "陪他跑完这一圈", "result_text": "你累得直喘，但心情很好。", "effects": { "fitness": 2, "energy": -8, "mood": 4 } },
@@ -155,6 +157,7 @@
       "days": [2, 59],
       "time": { "from": "08:00", "to": "20:00" },
       "location": null,
+      "once": true,
       "weight": 7,
       "choices": [
         { "id": "a", "text": "帮忙搬", "result_text": "邻居塞给你五十块，还留了联系方式。", "effects": { "money": 50, "energy": -12, "fitness": 1 }, "extra": [{ "path": "player.trust", "op": "add", "value": 3 }] },
@@ -257,6 +260,7 @@
       "days": [4, 59],
       "time": { "from": "09:00", "to": "18:00" },
       "location": null,
+      "once": true,
       "weight": 6,
       "choices": [
         { "id": "a", "text": "报名参加", "result_text": "你忙了一天，社区阿姨记住了你的名字。", "effects": { "energy": -15, "hunger": -20, "mood": 5 }, "extra": [{ "path": "player.trust", "op": "add", "value": 6 }] },
@@ -271,6 +275,7 @@
       "days": [6, 59],
       "time": { "from": "00:00", "to": "06:00" },
       "location": "home",
+      "once": true,
       "conditions": { "all": [{ "field": "player.hunger", "op": "gte", "value": 60 }] },
       "weight": 9,
       "choices": [
@@ -347,8 +352,8 @@
       "npc": "mom",
       "title": "妈妈谈未来",
       "text": "“不管这个暑假赚多少钱，”妈妈说，“妈更想知道你以后想成为什么样的人。”",
-      "days": [41, 59],
-      "phase": 3,
+      "days": [46, 59],
+      "phase": 4,
       "once": true,
       "weight": 20,
       "choices": [
@@ -393,8 +398,8 @@
       "npc": "boss_zhou",
       "title": "老周要写推荐",
       "text": "“干了一个多月，你这孩子还行。”老周难得夸人，“要不要我给你写封推荐信？”",
-      "days": [41, 59],
-      "phase": 3,
+      "days": [46, 59],
+      "phase": 4,
       "once": true,
       "weight": 20,
       "conditions": { "all": [{ "field": "npcs.boss_zhou.relationship", "op": "gte", "value": 55 }] },
@@ -440,8 +445,8 @@
       "npc": "lin_xiaoyu",
       "title": "林晓雨的认真问题",
       "text": "“暑假快结束了。”她忽然问，“以后我们还会像现在这样吗？”",
-      "days": [41, 59],
-      "phase": 3,
+      "days": [46, 59],
+      "phase": 4,
       "once": true,
       "weight": 20,
       "conditions": { "all": [{ "field": "npcs.lin_xiaoyu.relationship", "op": "gte", "value": 55 }] },
@@ -487,8 +492,8 @@
       "npc": "teacher_chen",
       "title": "陈老师提到升学机会",
       "text": "“有个暑期数学竞赛的推荐名额。”陈老师看着你，“如果你这阵子肯下功夫，我可以帮你争取。”",
-      "days": [41, 59],
-      "phase": 3,
+      "days": [46, 59],
+      "phase": 4,
       "once": true,
       "weight": 20,
       "conditions": { "all": [{ "field": "player.math", "op": "gte", "value": 55 }] },
@@ -534,8 +539,8 @@
       "npc": "akai",
       "title": "阿凯出事了",
       "text": "阿凯半夜给你打电话，声音发抖：“哥们，我摊上事了，能不能先借我点钱周转？”",
-      "days": [41, 59],
-      "phase": 3,
+      "days": [46, 59],
+      "phase": 4,
       "once": true,
       "weight": 20,
       "choices": [
@@ -603,8 +608,8 @@
       "npc": "night_cat",
       "title": "夜班猫的委托",
       "text": "“有个数据标注的活儿，按件计费，时间自由。”夜班猫发来消息，“但要先通过一个小测试。”",
-      "days": [41, 59],
-      "phase": 3,
+      "days": [46, 59],
+      "phase": 4,
       "once": true,
       "weight": 15,
       "conditions": { "all": [{ "flag": "night_cat_contact", "op": "eq", "value": true }] },
@@ -654,6 +659,7 @@
       "days": [1, 59],
       "time": { "from": "08:00", "to": "22:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 8,
       "choices": [
         { "id": "a", "text": "给 ¥5", "result_text": "老人抬头冲你笑了笑。", "effects": { "money": -5, "mood": 3 }, "extra": [{ "path": "player.trust", "op": "add", "value": 2 }] },
@@ -669,6 +675,7 @@
       "days": [1, 59],
       "time": { "from": "08:00", "to": "22:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 9,
       "choices": [
         { "id": "a", "text": "帮她搬", "result_text": "她非要请你喝瓶水，还留了联系方式。", "effects": { "energy": -8, "mood": 4, "fitness": 1 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }, { "path": "flags.good_deeds", "op": "add", "value": 1 }] },
@@ -683,6 +690,7 @@
       "days": [3, 59],
       "time": { "from": "10:00", "to": "22:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 7,
       "choices": [
         { "id": "a", "text": "立刻报警", "result_text": "那人见势不妙，一瘸一拐地跑了。", "effects": { "mood": 3 }, "extra": [{ "path": "player.trust", "op": "add", "value": 5 }] },
@@ -698,6 +706,7 @@
       "days": [1, 59],
       "time": { "from": "14:00", "to": "22:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 7,
       "choices": [
         { "id": "a", "text": "投 ¥10 支持一下", "result_text": "他朝你点头致意，唱得更投入了。", "effects": { "money": -10, "mood": 4 } },
@@ -712,6 +721,7 @@
       "days": [1, 45],
       "time": { "from": "10:00", "to": "18:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 8,
       "choices": [
         { "id": "a", "text": "干，两小时五十块", "result_text": "太阳很晒，但钱到手了。", "effects": { "money": 50, "energy": -12, "hunger": 6, "communication": 1 } },
@@ -726,6 +736,7 @@
       "days": [1, 59],
       "time": { "from": "10:00", "to": "20:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 6,
       "choices": [
         { "id": "a", "text": "陪他一起等，帮忙找", "result_text": "半小时后，孩子妈妈赶来，对你千恩万谢。", "effects": { "energy": -6, "mood": 6 }, "extra": [{ "path": "player.trust", "op": "add", "value": 6 }, { "path": "flags.good_deeds", "op": "add", "value": 1 }] },
@@ -740,6 +751,7 @@
       "days": [1, 59],
       "time": { "from": "10:00", "to": "21:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 7,
       "choices": [
         { "id": "a", "text": "凑单抽一次", "result_text": "你抽到了一张五折券。", "effects": { "money": -30, "mood": 3 } },
@@ -754,6 +766,7 @@
       "days": [2, 59],
       "time": { "from": "10:00", "to": "22:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 6,
       "choices": [
         { "id": "a", "text": "帮他把车推到修车铺", "result_text": "小哥连声道谢，硬塞给你二十块。", "effects": { "money": 20, "energy": -10, "fitness": 1 }, "extra": [{ "path": "player.trust", "op": "add", "value": 4 }] },
@@ -783,6 +796,7 @@
       "days": [1, 59],
       "time": { "from": "08:00", "to": "22:00" },
       "location": "commercial_street",
+      "once": true,
       "weight": 5,
       "choices": [
         { "id": "a", "text": "买根火腿肠喂它", "result_text": "它吃得狼吞虎咽，蹭了蹭你的裤脚。", "effects": { "money": -5, "mood": 5 } },
@@ -828,6 +842,7 @@
       "days": [25, 58],
       "time": { "from": "20:00", "to": "24:00" },
       "location": null,
+      "once": true,
       "weight": 10,
       "conditions": { "all": [{ "flag": "night_work_unlocked", "op": "eq", "value": true }] },
       "choices": [
@@ -843,6 +858,7 @@
       "days": [18, 55],
       "time": { "from": "22:00", "to": "24:00" },
       "location": "hardware_store",
+      "once": true,
       "weight": 8,
       "conditions": { "all": [{ "field": "player.fitness", "op": "gte", "value": 45 }] },
       "choices": [

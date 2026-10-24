@@ -72,7 +72,7 @@ func availability_report(state: GameState, action_id: String) -> Dictionary:
 	return {"ok": reasons.is_empty(), "reasons": reasons}
 
 ## 检查行动成本是否付得起（现金 / 体力为硬门槛）。
-func cost_blockers(state: GameState, cost: Variant) -> Array:
+static func cost_blockers(state: GameState, cost: Variant) -> Array:
 	var reasons: Array = []
 	if not (cost is Dictionary):
 		return reasons
@@ -119,7 +119,10 @@ func commit(state: GameState, action_id: String) -> Dictionary:
 
 	# 工作
 	if ContentLoader.jobs.has(action_id):
-		return job_system.commit(state, action_id)
+		var job_result := job_system.commit(state, action_id)
+		if job_result.get("ok", false):
+			state.slot_used = state.slot_used or bool(job_result.get("consume_slot", false))
+		return job_result
 
 	var handler: String = str(action.get("handler", "action"))
 	var result := _empty_result(action_id)
@@ -131,10 +134,18 @@ func commit(state: GameState, action_id: String) -> Dictionary:
 		result.special = "shop"
 		return result
 
+	# 考试入口同样不预扣成本：真实的体力消耗与时段占用在实际作答时
+	# 由 ExamSystem.commit 结算，取消考试不会白扣体力或锁死时段。
+	if handler == "exam":
+		result.consume_slot = false
+		result.special = "exam"
+		return result
+
 	# 先结算成本，再结算收益
 	result.changes.append_array(EffectResolver.apply_cost(state, action.get("cost", {}), "消耗"))
 	_apply_effects(state, action, result)
 	_apply_passive_bonus(state, action, result)
+	_apply_item_bonuses(state, action, result)
 
 	match handler:
 		"action":
@@ -163,8 +174,6 @@ func commit(state: GameState, action_id: String) -> Dictionary:
 			var npc_id := str(action.get("npc_id", ""))
 			state.mark_npc_met(npc_id)
 			result.event_pool = _npc_event_pool(npc_id)
-		"exam":
-			result.special = "exam"
 		"apply_job":
 			_apply_job(state, action, result)
 		"sleep":
@@ -191,6 +200,15 @@ func _apply_passive_bonus(state: GameState, action: Dictionary, result: Dictiona
 	if state.has_passive("passive_social") and handler == "social":
 		result.changes.append(state.add_player("mood", 3, "社交达人"))
 
+## 商店物品的持续效果：把物品描述里承诺的加成接到行动结算上。
+func _apply_item_bonuses(state: GameState, action: Dictionary, result: Dictionary) -> void:
+	var handler := str(action.get("handler", "action"))
+	var id := str(action.get("id", ""))
+	if bool(state.get_flag("has_reference_book")) and (id == "study_home" or id == "study_library"):
+		result.changes.append(state.add_player("study", 1, "教辅书"))
+	if bool(state.get_flag("has_new_clothes")) and handler == "social":
+		result.changes.append(state.add_player("mood", 2, "新衣服"))
+
 func _apply_effects(state: GameState, action: Dictionary, result: Dictionary) -> void:
 	result.changes.append_array(EffectResolver.apply_dict(state, action.get("effects", {}), "收益"))
 	if action.has("extra"):
@@ -201,27 +219,24 @@ func _apply_effects(state: GameState, action: Dictionary, result: Dictionary) ->
 # ---------------------------------------------------------------------------
 
 func _resolve_lottery(state: GameState, result: Dictionary) -> void:
-	var luck := int(state.player.get("luck", 50))
-	var bonus := int(luck / 25)
 	var roll := RandomSource.randi_range(1, 100)
 	var prize := 0
-	if roll <= 2 + bonus:
+	if roll <= 1:
 		prize = 500
 		result.messages.append("中了大奖！")
-	elif roll <= 10 + bonus * 2:
+	elif roll <= 5:
 		prize = 50
 		result.messages.append("小赚一笔。")
-	elif roll <= 30:
+	elif roll <= 20:
 		prize = 10
 		result.messages.append("刚好回本。")
 	else:
 		result.messages.append("谢谢参与。")
 	if prize > 0:
 		result.changes.append(state.add_player("money", prize, "彩票中奖"))
-	# 连续购买增加冲动消费
-	var streak := int(state.get_flag("lottery_streak")) + 1
-	state.set_flag("lottery_streak", streak)
-	if streak >= 3:
+	# 当日购买达到第三张后，父母会在日结时介入。
+	state.set_flag("lottery_tickets_today", int(state.get_flag("lottery_tickets_today")) + 1)
+	if int(state.get_flag("lottery_tickets_today")) >= 3:
 		result.changes.append(state.add_player("mood", -4, "冲动消费"))
 		result.messages.append("你有点上头了，心情 -4。")
 

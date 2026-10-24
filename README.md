@@ -14,8 +14,10 @@
 - 内容加载新增字段校验，`effects` / 条件里拼错的字段会在启动时报错，而不是静默写成 flag。
 - 存档写入改为「备份 → 替换 → 清理」，失败可还原；读档不再残留上一局的推进意图。
 - 界面刷新改为先摘出再释放，消除同帧新旧节点共存导致的重复显示与焦点错乱。
+- 第二轮玩法逻辑修复：考试选项效果与取消不白扣体力、深夜事件可达性、非消耗品重复购买、事件弹窗不可跳过、读档随机流不重演。
+- 复审修复：pending 事件读档恢复、通关存档保护、彩票规则统一、重复正收益事件限制、第三幕日期窗口修正。
 
-自动化测试现为 139 条用例（新增回归与全流程通关测试），全部通过。
+自动化测试现为 185 条用例（含回归、防护与全流程通关测试），全部通过。
 
 ## 核心玩法
 
@@ -49,6 +51,22 @@
 
 项目已包含三套导出预设：`macOS`、`Windows` 和 `Android`。首次导出前，在 Godot 编辑器中打开 `Editor > Manage Export Templates`，安装与当前编辑器完全一致的 `4.7.2.stable` 导出模板。
 
+## 仅同步代码到 GitHub
+
+只上传源码和文档、不发布新安装包时，不需要导出游戏或创建 GitHub Release。先运行测试并检查改动，再提交到 `main`：
+
+```bash
+godot --headless --path . --scene tests/test_runner.tscn
+git status --short
+git diff --check
+git add README.md CHANGELOG.md PRD.md ARCHITECTURE.md data scripts tests
+git diff --cached --check
+git commit -m "fix: address gameplay review findings"
+git push origin main
+```
+
+`CHANGELOG.md` 记录代码修复；只有准备发布新的 Windows、macOS 或 Android 构建时，才递增 `export_presets.cfg` 版本号、导出安装包并按下方流程创建 Release。
+
 在项目根目录执行：
 
 ```bash
@@ -80,7 +98,7 @@ apksigner verify builds/暑假工计划-signed.apk
 
 `builds/` 已在忽略规则内，构建产物不进仓库，只作为 Release 附件上传：
 
-1. 先确认测试通过：`godot --headless --path . --scene tests/test_runner.tscn`（当前 139 条用例，应全绿）。
+1. 先确认测试通过：`godot --headless --path . --scene tests/test_runner.tscn`（当前 185 条用例，应全绿）。
 2. 改 `export_presets.cfg` 里三处版本号（macOS 的 `short_version`/`version`、Windows 的 `file_version`/`product_version`、Android 的 `version/code` 递增 + `version/name`），再按上面的命令重新导出并签名。
 3. 更新 `CHANGELOG.md`，按 `git add -A && git commit -m "release: vX.Y.Z" && git push origin main` 提交源码。
 4. 打标签并推送：`git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`。
@@ -88,7 +106,7 @@ apksigner verify builds/暑假工计划-signed.apk
 
 ## 运行测试
 
-项目包含基于 GDScript 的测试场景，位于 `tests/test_runner.tscn`，当前共 139 条用例，覆盖内容加载、日程、事件、存档迁移、结局、边界条件、回归问题和一次完整 60 天通关。使用 Godot 编辑器运行该场景即可执行测试；也可以使用 Godot 的无头模式运行测试场景：
+项目包含基于 GDScript 的测试场景，位于 `tests/test_runner.tscn`，当前共 185 条用例，覆盖内容加载、日程、事件、存档迁移、结局、边界条件、玩法回归问题和一次完整 60 天通关。使用 Godot 编辑器运行该场景即可执行测试；也可以使用 Godot 的无头模式运行测试场景：
 
 ```bash
 godot --headless --path . --scene tests/test_runner.tscn

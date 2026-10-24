@@ -15,6 +15,7 @@ func on_day_end(state: GameState) -> Dictionary:
 	messages.append(_daily_line(state))
 	state.set_flag("worked_today", false)
 	state.set_flag("worked_on_time_today", false)
+	state.set_flag("lottery_tickets_today", 0)
 	return {"messages": messages, "changes": changes}
 
 func _on_time_reward(state: GameState, changes: Array, messages: Array) -> void:
@@ -50,7 +51,7 @@ func _scold(state: GameState, changes: Array, messages: Array) -> void:
 	if bool(state.get_flag("did_shady_job")):
 		scold = true
 		state.set_flag("did_shady_job", false)
-	if int(state.get_flag("lottery_streak")) >= 3:
+	if int(state.get_flag("lottery_tickets_today")) >= 3:
 		scold = true
 	if scold:
 		changes.append(state.add_player("mood", -3, "被训话"))

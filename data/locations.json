@@ -87,7 +87,7 @@
       "open_minutes": [600, 1320],
       "tags": ["social", "street"],
       "map_pos": [208, 132],
-      "actions": ["stroll", "socialize", "buy_item", "collect_scrap", "lottery", "talk_akai"],
+      "actions": ["stroll", "socialize", "buy_item", "collect_scrap", "talk_akai", "clinic_visit"],
       "event_pool": ["street_01", "street_02", "street_03"]
     }
   ]

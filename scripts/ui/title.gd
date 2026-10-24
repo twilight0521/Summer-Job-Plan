@@ -42,7 +42,9 @@ func _build() -> void:
 	center.add_child(spacer)
 
 	_add_button(center, "新游戏", _on_new_game)
-	_add_button(center, "继续游戏", _on_continue, SaveRepository.has_save(SaveRepository.AUTO_SLOT))
+	var auto_info := SaveRepository.read_info(SaveRepository.AUTO_SLOT)
+	var auto_finished := bool(auto_info.get("finished", false))
+	_add_button(center, "继续游戏" if not auto_finished else "本局已通关", _on_continue, not auto_info.is_empty() and not auto_finished)
 	_add_button(center, "读取存档", _on_open_load)
 	_add_button(center, "设置", _on_settings)
 	_add_button(center, "退出", _on_quit)

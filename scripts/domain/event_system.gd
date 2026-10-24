@@ -20,10 +20,13 @@ func is_eligible(state: GameState, event: Dictionary, location_id: String = "") 
 
 	var time: Variant = event.get("time", null)
 	if time is Dictionary:
-		var now := GameConfig.slot_minutes(state.slot)
+		# 时段与事件时间窗只要存在重叠就算可能发生（事件发生在时段内的某一刻）。
+		# 只用时段起点判断会把 22:00–24:00 这类深夜事件判成永不可达。
 		var from := GameConfig.parse_clock(str(time.get("from", "00:00")))
 		var to := GameConfig.parse_clock(str(time.get("to", "24:00")))
-		if now < from or now > to:
+		var slot_from := GameConfig.slot_minutes(state.slot)
+		var slot_to := GameConfig.slot_end_minutes(state.slot)
+		if slot_from >= to or from >= slot_to:
 			return false
 
 	var raw_loc: Variant = event.get("location", "")
@@ -61,6 +64,9 @@ func eligible_events(state: GameState, location_id: String = "", pool: Variant =
 	for event in source:
 		if event.is_empty():
 			continue
+		# 打工专属风险事件只能由工作行动提供的 event_pool 触发。
+		if category == "" and (pool == null or not (pool is Array and not pool.is_empty())) and str(event.get("category", "")) == "job":
+			continue
 		if category != "" and str(event.get("category", "")) != category:
 			continue
 		if is_eligible(state, event, location_id):
@@ -84,6 +90,10 @@ func present(state: GameState, event: Dictionary) -> Dictionary:
 	var choices: Array = []
 	for choice in event.get("choices", []):
 		if choice.has("conditions") and not ConditionEvaluator.evaluate(choice["conditions"], state):
+			continue
+		# 付不起的选项不展示：否则玩家点下去只会收到“现金不足”，
+		# 若所有选项都付不起，事件会卡住无法继续。
+		if not _choice_cost_blockers(state, choice).is_empty():
 			continue
 		choices.append({
 			"id": choice.get("id", ""),

@@ -128,7 +128,6 @@ func _end_day(state: GameState) -> Dictionary:
 	if not bool(state.get_flag("exercise_today")):
 		state.set_flag("exercise_streak", 0)
 	state.set_flag("exercise_today", false)
-	state.set_flag("lottery_streak", 0)
 
 	# 伤势恢复
 	var injury_days := int(state.get_flag("injury_days"))

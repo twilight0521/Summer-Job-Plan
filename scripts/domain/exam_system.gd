@@ -92,12 +92,23 @@ func commit(state: GameState, exam_id: String, choice_id: String) -> Dictionary:
 	if not check.get("ok", false):
 		return {"ok": false, "message": str(check.get("reason", "无法参加考试")), "changes": []}
 	var exam: Dictionary = check["exam"]
+	# 考试成本在这里结算（入口行动只做展示与门槛判断），取消考试不产生任何扣除。
+	var blockers := ActionSystem.cost_blockers(state, exam.get("cost", {}))
+	if not blockers.is_empty():
+		return {"ok": false, "message": "；".join(blockers), "changes": []}
+
 	var scored := score(state, exam_id, choice_id)
 	var value: int = scored["score"]
 	var pass_score := int(exam.get("pass_score", 60))
 	var passed := value >= pass_score
 
 	var changes: Array = []
+	changes.append_array(EffectResolver.apply_cost(state, exam.get("cost", {}), "参加考试"))
+	# 考试选项自带的小额效果：如「仔细检查」多耗体力、「快速交卷」省点体力。
+	for choice in exam.get("choices", []):
+		if str(choice.get("id", "")) == choice_id:
+			changes.append_array(EffectResolver.apply_dict(state, choice.get("effects", {}), "考试选择"))
+			break
 	state.set_flag("exam_taken_phase_%d_%s" % [state.phase, exam_id], true)
 
 	if passed:
