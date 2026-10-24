@@ -23,17 +23,31 @@ static func cost_delta(field: String, value: Variant) -> float:
 	return v
 
 ## 应用成本，统一按上面的语义结算。
+## 体力消耗会按当前饥饿放大：越饿掉得越快。
 static func apply_cost(state: GameState, cost: Variant, reason: String = "消耗") -> Array:
 	var changes: Array = []
 	if not (cost is Dictionary):
 		return changes
+	var hunger := float(state.player.get("hunger", 0))
 	for key in cost:
 		var field := str(key)
 		if GameConfig.CLAMPS.has(field):
-			changes.append(state.add_player(field, cost_delta(field, cost[key]), reason))
+			var delta := cost_delta(field, cost[key])
+			if field == "energy" and delta < 0.0:
+				delta = -GameConfig.scale_energy_cost(-delta, hunger)
+			changes.append(state.add_player(field, delta, reason))
 		else:
 			changes.append(state.set_flag(field, cost[key]))
 	return changes
+
+## 预览用：把声明成本里的体力按饥饿放大后返回副本。
+static func preview_cost(state: GameState, cost: Variant) -> Dictionary:
+	if not (cost is Dictionary):
+		return {}
+	var out: Dictionary = (cost as Dictionary).duplicate(true)
+	if out.has("energy"):
+		out["energy"] = GameConfig.scale_energy_cost(float(out["energy"]), float(state.player.get("hunger", 0)))
+	return out
 
 static func apply_combined(state: GameState, effects_dict: Variant, extra_array: Variant, reason: String = "") -> Array:
 	var changes: Array = []

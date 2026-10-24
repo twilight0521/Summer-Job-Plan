@@ -84,20 +84,23 @@ func commit(state: GameState, job_id: String) -> Dictionary:
 			wage *= float(hw.get("wage_multiplier", 0.5))
 			result.messages.append("肌肉度不足，你只能硬干，收入减半。")
 
-	# 消耗
+	# 消耗（体力按饥饿放大）
+	var hunger := float(state.player.get("hunger", 0))
 	result.changes.append_array(EffectResolver.apply_cost(state, job.get("cost", {}), "工作消耗"))
+	var hunger_note := GameConfig.hunger_energy_note(hunger)
+	if hunger_note != "" and job.get("cost", {}).has("energy"):
+		result.messages.append(hunger_note)
 
 	# 工资与收益
 	var money_delta := int(round(wage))
 
-	# 饥饿降低工作效率
-	var hunger := float(state.player.get("hunger", 0))
+	# 饥饿降低工作效率，并提醒该吃饭
 	if hunger >= 90.0:
 		money_delta = int(round(money_delta * 0.6))
-		result.messages.append("你饿得发慌，效率很低，工资打折。")
+		result.messages.append("你饿得发慌，效率很低，工资打折。该吃饭了。")
 	elif hunger >= 70.0:
 		money_delta = int(round(money_delta * 0.8))
-		result.messages.append("空着肚子干活，效率不高。")
+		result.messages.append("空着肚子干活，效率不高。先填饱肚子会好一些。")
 
 	# 被动：早起的鸟儿提升早班收入
 	if job.has("early_shift") and state.has_passive("passive_early_bird"):

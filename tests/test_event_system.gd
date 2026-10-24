@@ -20,12 +20,13 @@ static func run(t) -> void:
 	t.eq(bool(state.get_flag("event_fired_street_01")), true, "事件触发标记写入")
 	t.eq(events.is_eligible(state, wallet), false, "once 事件不会重复触发")
 
-	# 固定 seed 下抽取可复现
+	# 固定 seed 下抽取可复现（强制触发，避开概率门控）
 	RandomSource.use_seed(42)
-	var pick_a := events.pick_event(state, ["street_02", "street_03", "street_05"])
+	var pick_a := events.pick_event(state, ["street_02", "street_03", "street_05"], "", 1.0)
 	RandomSource.use_seed(42)
-	var pick_b := events.pick_event(state, ["street_02", "street_03", "street_05"])
+	var pick_b := events.pick_event(state, ["street_02", "street_03", "street_05"], "", 1.0)
 	t.eq(str(pick_a.get("id", "")), str(pick_b.get("id", "")), "固定 seed 抽取结果可复现")
+	t.ok(not pick_a.is_empty(), "强制触发时能抽到事件")
 
 	# 选项结算产生 ChangeSet 且信任值变化
 	var before_trust := int(state.player.get("trust", 0))

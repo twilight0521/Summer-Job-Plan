@@ -33,8 +33,9 @@ func _ready() -> void:
 	if GameFlow.state == null:
 		GameFlow.start_new_game()
 	else:
-		GameFlow.resume_pending_event()
+		GameFlow.resume_pending_flow()
 	_refresh()
+	_maybe_show_intro()
 
 func _connect_flow() -> void:
 	GameFlow.state_changed.connect(_refresh)
@@ -245,14 +246,20 @@ func _section(text: String) -> Label:
 func _stat_row(field: String, store: Dictionary) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	var tip := GameConfig.field_tip(field)
+	if tip != "":
+		row.tooltip_text = tip
 	var meta: Dictionary = GameConfig.FIELD_META.get(field, {"name": field, "icon": "•"})
 	var name_label := Label.new()
 	name_label.text = "%s%s" % [meta.get("icon", ""), meta.get("name", field)]
 	name_label.custom_minimum_size = Vector2(78, 0)
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(name_label)
 	var value_label := Label.new()
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(value_label)
 	store[field] = value_label
 	return row
@@ -322,8 +329,7 @@ func _on_location_pressed(loc_id: String) -> void:
 
 func _refresh_actions() -> void:
 	_clear_children(action_box)
-	var state := GameFlow.state
-	var actions := GameFlow.available_actions()
+	var actions := GameFlow.location_actions()
 	if actions.is_empty():
 		var label := Label.new()
 		label.text = "这里现在没什么可做的。"
@@ -331,17 +337,23 @@ func _refresh_actions() -> void:
 		action_box.add_child(label)
 		return
 	for action_id in actions:
-		var preview := GameFlow.action_preview(action_id)
+		var preview := GameFlow.action_preview(str(action_id))
 		var btn := Button.new()
+		var ok := bool(preview.get("ok", false))
 		btn.text = str(preview.get("name", action_id))
+		if not ok:
+			btn.text += "（不可用）"
+		btn.disabled = not ok
 		btn.tooltip_text = _preview_tooltip(preview)
-		btn.pressed.connect(_on_action_pressed.bind(action_id, preview))
+		if ok:
+			btn.pressed.connect(_on_action_pressed.bind(str(action_id), preview))
 		action_box.add_child(btn)
 	# 确保纯键盘启动时有可操作的焦点；弹窗会自行聚焦首个按钮。
 	if not _modal_open and get_viewport().gui_get_focus_owner() == null and not action_box.get_children().is_empty():
-		var first := action_box.get_child(0)
-		if first is Control:
-			first.grab_focus()
+		for child in action_box.get_children():
+			if child is Button and not child.disabled:
+				child.grab_focus()
+				break
 
 func _refresh_primary_action() -> void:
 	if primary_action_button == null:
@@ -370,6 +382,16 @@ func _refresh_relationships() -> void:
 func _format_value(field: String, value: Variant) -> String:
 	if field == "money":
 		return "¥%d" % int(value)
+	if field == "hunger":
+		# 饥饿越高越饿、越该吃饭；后缀避免和「数值高=好」的属性搞混。
+		var v := int(value)
+		if v >= 90:
+			return "%d·很饿" % v
+		if v >= 70:
+			return "%d·偏饿" % v
+		if v >= 40:
+			return "%d·微饿" % v
+		return "%d·尚可" % v
 	return str(int(value))
 
 func _color_for(field: String, value: Variant) -> Color:
@@ -406,6 +428,9 @@ func _preview_tooltip(preview: Dictionary) -> String:
 		lines.append("消耗：" + "，".join(parts))
 	for w in preview.get("warnings", []):
 		lines.append("⚠ " + str(w))
+	if not bool(preview.get("ok", true)):
+		for reason in preview.get("reasons", []):
+			lines.append("× " + str(reason))
 	return "\n".join(lines)
 
 # ---------------------------------------------------------------------------
@@ -425,7 +450,10 @@ func _on_action_pressed(action_id: String, preview: Dictionary) -> void:
 	desc.custom_minimum_size = Vector2(300, 0)
 	box.add_child(desc)
 	var selected_action := ContentLoader.get_action(action_id)
-	if GameFlow.state.slot >= 3 and int(selected_action.get("duration_slots", 1)) > 0 and str(selected_action.get("handler", "")) != "sleep":
+	var handler := str(selected_action.get("handler", ""))
+	# 考试/商店入口本身不推进时段；真正作答或取消后再决定。
+	if GameFlow.state.slot >= 3 and int(selected_action.get("duration_slots", 1)) > 0 \
+		and handler != "sleep" and handler != "exam" and handler != "shop":
 		var late_warning := Label.new()
 		late_warning.text = "晚上行动后将直接熬夜进入明天：健康 -3、疲劳 +10，并增加睡眠债。选择“睡觉”可正常恢复。"
 		late_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -486,7 +514,7 @@ func _choose_event(choice_id: String) -> void:
 	# 只有结算成功才关弹窗；失败（如付不起钱）时保留弹窗换一个选项。
 	if GameFlow.choose_event_choice(choice_id):
 		# 结算期间可能同步打开阶段总结或结局，不能再关闭新弹窗。
-		if not GameFlow.is_game_finished() and not GameFlow._awaiting_phase_continue:
+		if not GameFlow.is_game_finished() and not GameFlow.is_awaiting_phase_continue():
 			_close_modal()
 
 func _on_event_resolved(result: Dictionary) -> void:
@@ -569,7 +597,8 @@ func _on_shop_requested(items: Array) -> void:
 
 func _on_buy_pressed(item_id: String) -> void:
 	GameFlow.buy_item(item_id)
-	_close_modal()
+	# 买完保持商店打开，方便连续采购；现金标题随状态刷新。
+	_on_shop_requested(ContentLoader.all_items())
 
 # ---------------------------------------------------------------------------
 # 阶段总结 / 结局
@@ -663,6 +692,7 @@ func _on_game_over(summary: Dictionary) -> void:
 		_close_modal()
 		GameFlow.start_new_game()
 		_refresh()
+		_maybe_show_intro()
 	)
 	buttons.add_child(again)
 	var to_title := Button.new()
@@ -670,6 +700,54 @@ func _on_game_over(summary: Dictionary) -> void:
 	to_title.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/title/title.tscn"))
 	buttons.add_child(to_title)
 
+	_show_modal(box, false)
+
+# ---------------------------------------------------------------------------
+# 开局介绍
+# ---------------------------------------------------------------------------
+
+func _maybe_show_intro() -> void:
+	if not GameFlow.should_show_intro():
+		return
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+
+	var title := Label.new()
+	title.text = "暑假开始了"
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", UiTheme.ACCENT)
+	box.add_child(title)
+
+	var body := Label.new()
+	body.text = "\n".join([
+		"你是一名准备过暑假的高中生。接下来有 60 天，",
+		"可以在这个小镇里打工赚钱、补课学习、社交消费，",
+		"也可以什么都不做——但每一天都会留下痕迹。",
+		"",
+		"主线没有唯一正确答案。你会慢慢走向不同结局：",
+		"· 攒下第一桶金，体验一点独立",
+		"· 认真备考，走到会计实习路线",
+		"· 经营人际与口碑，成为街坊都认识的人",
+		"· 或是体力心情透支，迎来吐槽式收尾",
+		"",
+		"每天分凌晨、早上、下午、晚上四个时段。",
+		"出门选地点、做选择，睡觉进入下一天；",
+		"第 15 / 30 / 45 / 60 天会有阶段总结。",
+		"",
+		"左边是状态，右边是能力与关系。",
+		"把鼠标移到各项数值上，可以看到它们各自的作用。",
+	])
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.custom_minimum_size = Vector2(360, 0)
+	box.add_child(body)
+
+	var ok := Button.new()
+	ok.text = "开始安排今天"
+	ok.pressed.connect(func():
+		GameFlow.mark_intro_seen()
+		_close_modal()
+	)
+	box.add_child(ok)
 	_show_modal(box, false)
 
 # ---------------------------------------------------------------------------

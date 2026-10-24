@@ -11,18 +11,14 @@ func _init() -> void:
 # 查询
 # ---------------------------------------------------------------------------
 
+## 列出地点配置的全部行动（含暂不可用），由 UI 灰显并展示原因。
 func actions_at(state: GameState, location_id: String) -> Array:
 	var loc: Dictionary = ContentLoader.get_location(location_id)
 	var result: Array = []
 	for action_id in loc.get("actions", []):
-		if ContentLoader.get_action(action_id).is_empty():
+		if ContentLoader.get_action(str(action_id)).is_empty():
 			continue
-		var action: Dictionary = ContentLoader.get_action(action_id)
-		if action.get("handler", "action") == "buy_item" or action_id == "buy_item":
-			result.append(action_id)
-			continue
-		if is_available(state, action_id):
-			result.append(action_id)
+		result.append(str(action_id))
 	return result
 
 func is_available(state: GameState, action_id: String) -> bool:
@@ -72,14 +68,18 @@ func availability_report(state: GameState, action_id: String) -> Dictionary:
 	return {"ok": reasons.is_empty(), "reasons": reasons}
 
 ## 检查行动成本是否付得起（现金 / 体力为硬门槛）。
+## 体力需求按当前饥饿放大后再比较。
 static func cost_blockers(state: GameState, cost: Variant) -> Array:
 	var reasons: Array = []
 	if not (cost is Dictionary):
 		return reasons
 	var gates := {"money": "现金", "energy": "体力"}
+	var hunger := float(state.player.get("hunger", 0))
 	for key in gates:
 		if cost.has(key):
 			var need := absf(float(cost[key]))
+			if key == "energy":
+				need = GameConfig.scale_energy_cost(need, hunger)
 			if need > 0.0 and float(state.player.get(key, 0)) < need:
 				reasons.append("%s不足（需要 %d，当前 %d）" % [
 					gates[key], int(ceil(need)), int(state.player.get(key, 0))
@@ -89,11 +89,14 @@ static func cost_blockers(state: GameState, cost: Variant) -> Array:
 func preview(state: GameState, action_id: String) -> Dictionary:
 	var action: Dictionary = ContentLoader.get_action(action_id)
 	var report := availability_report(state, action_id)
-	var cost: Dictionary = action.get("cost", {})
+	var cost: Dictionary = EffectResolver.preview_cost(state, action.get("cost", {}))
 	var effects: Dictionary = action.get("effects", {})
 	var warnings: Array = []
 	if job_system and ContentLoader.jobs.has(action_id):
 		warnings.append_array(job_system.preview_warnings(state, action_id))
+	var hunger_note := GameConfig.hunger_energy_note(float(state.player.get("hunger", 0)))
+	if hunger_note != "" and cost.has("energy") and float(cost.get("energy", 0)) > 0.0:
+		warnings.append(hunger_note)
 	return {
 		"action_id": action_id,
 		"name": action.get("name", action_id),
@@ -141,8 +144,12 @@ func commit(state: GameState, action_id: String) -> Dictionary:
 		result.special = "exam"
 		return result
 
-	# 先结算成本，再结算收益
+	# 先结算成本，再结算收益（体力消耗已按饥饿放大）
+	var hunger_before := float(state.player.get("hunger", 0))
 	result.changes.append_array(EffectResolver.apply_cost(state, action.get("cost", {}), "消耗"))
+	var hunger_note := GameConfig.hunger_energy_note(hunger_before)
+	if hunger_note != "" and action.get("cost", {}).has("energy"):
+		result.messages.append(hunger_note)
 	_apply_effects(state, action, result)
 	_apply_passive_bonus(state, action, result)
 	_apply_item_bonuses(state, action, result)

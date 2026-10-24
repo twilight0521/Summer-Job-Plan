@@ -22,6 +22,17 @@ static func run(t) -> void:
 	_lottery_expected_return(t)
 	_pending_event_survives_load(t)
 	_hidden_partner_ending(t)
+	_event_trigger_chance_can_miss(t)
+	_repeat_event_cooldown(t)
+	_location_event_pool_used(t)
+	_location_open_half_open(t)
+	_unavailable_actions_listed(t)
+	_exam_entry_preview_no_energy_cost(t)
+	_final_day_phase_before_ending(t)
+	_hunger_scales_energy_cost(t)
+	_hunger_scales_daily_energy_drain(t)
+	_intro_shown_only_on_new_game(t)
+	_field_tips_cover_hud_stats(t)
 
 ## 睡眠债很高时，睡觉不能倒扣体力或增加疲劳（否则会进入死亡螺旋）。
 static func _sleep_debt_no_penalty_recovery(t) -> void:
@@ -275,3 +286,188 @@ static func _pending_event_survives_load(t) -> void:
 	t.eq(GameFlow.resume_pending_event(), true, "游戏场景连接监听后可以恢复事件弹窗")
 	t.eq(event_signal_count[0], 1, "恢复接口向游戏场景发送事件弹窗")
 	GameFlow.event_requested.disconnect(capture)
+
+## 有候选事件时也允许掷空：触发概率 < 1 不应次次必弹。
+static func _event_trigger_chance_can_miss(t) -> void:
+	var events := EventSystem.new()
+	var s := GameState.new_run(317, ContentLoader.characters)
+	s.location_id = "tea_shop"
+	s.slot = 2
+	s.day = 5
+	var misses := 0
+	for i in range(40):
+		RandomSource.use_seed(1000 + i)
+		if events.pick_event(s, ["tea_01", "tea_02"], "", GameConfig.EVENT_CHANCE_AMBIENT).is_empty():
+			misses += 1
+	t.ok(misses > 0, "氛围事件触发概率下会出现未触发（空抽 %d/40）" % misses)
+	RandomSource.use_seed(42)
+	t.ok(not events.pick_event(s, ["tea_01"], "", 1.0).is_empty(), "强制触发概率 1 时必出事件")
+
+## 可重复事件结算后进入冷却，当天不可再抽。
+static func _repeat_event_cooldown(t) -> void:
+	var events := EventSystem.new()
+	var s := GameState.new_run(318, ContentLoader.characters)
+	s.location_id = "tea_shop"
+	s.slot = 2
+	s.day = 8
+	var tea := ContentLoader.get_event("tea_01")
+	t.eq(events.is_eligible(s, tea), true, "冷却前可触发排队高峰")
+	var resolved := events.resolve(s, tea, "b")
+	t.eq(resolved.get("ok", false), true, "可重复事件可以结算")
+	t.eq(int(s.get_flag(GameConfig.EVENT_LAST_DAY_PREFIX + "tea_01")), 8, "记录最近触发日")
+	t.eq(events.is_eligible(s, tea), false, "冷却期内不可再触发")
+	s.day = 8 + GameConfig.EVENT_REPEAT_COOLDOWN_DAYS
+	t.eq(events.is_eligible(s, tea), true, "冷却结束后可再次触发")
+
+## 行动未带 pool 时，地点 event_pool 应参与抽取。
+static func _location_event_pool_used(t) -> void:
+	GameFlow.start_new_game(319)
+	GameFlow.state.location_id = "home"
+	GameFlow.state.slot = 1
+	GameFlow.state.day = 2
+	GameFlow.state.phase = 1
+	# 强制高概率：多次尝试直到抽到地点池事件，或确认 pool 路径被走。
+	var hit := false
+	for i in range(30):
+		RandomSource.use_seed(2000 + i)
+		if GameFlow._try_trigger_event([]):
+			var pending_id := str(GameFlow._pending_event.get("id", ""))
+			t.ok(["home_01", "home_02"].has(pending_id), "地点氛围池只抽 home_01/02，实际=%s" % pending_id)
+			hit = true
+			# 清掉 pending，避免污染后续用例
+			GameFlow._pending_event = {}
+			GameFlow._pending_slot_advance = false
+			GameFlow.state.meta.erase("pending_event")
+			GameFlow.state.meta.erase("pending_slot_advance")
+			break
+	t.ok(hit, "家地点氛围池在多次尝试后能触发")
+
+## 地点开门与行动营业时间统一为左闭右开。
+static func _location_open_half_open(t) -> void:
+	GameFlow.start_new_game(320)
+	GameFlow.state.slot = 1
+	# 早餐店 open_minutes [180, 600]：早上起点 420 仍开放，但不能用闭区间把 600 算进去。
+	t.eq(GameFlow.location_is_open("breakfast_shop"), true, "早上早餐店仍开门")
+	GameFlow.state.slot = 2
+	t.eq(GameFlow.location_is_open("breakfast_shop"), false, "下午早餐店已打烊")
+
+## 不可用行动仍出现在地点列表，便于提示原因。
+static func _unavailable_actions_listed(t) -> void:
+	GameFlow.start_new_game(321)
+	GameFlow.state.location_id = "library"
+	GameFlow.state.day = 1
+	GameFlow.state.slot = 2
+	var listed := GameFlow.location_actions()
+	t.ok(listed.has("take_exam"), "非阶段末也列出参加考试")
+	var preview := GameFlow.action_preview("take_exam")
+	t.eq(preview.get("ok", true), false, "非阶段末考试不可执行")
+	t.ok(not preview.get("reasons", []).is_empty(), "不可用考试带有原因说明")
+	t.ok(not GameFlow.available_actions().has("take_exam"), "available_actions 不包含不可用项")
+
+## 考试入口预览不再显示入口层体力消耗（真正消耗在试卷上）。
+static func _exam_entry_preview_no_energy_cost(t) -> void:
+	var preview := ActionSystem.new().preview(GameState.new_run(322, ContentLoader.characters), "take_exam")
+	var cost: Dictionary = preview.get("cost", {})
+	t.eq(cost.has("energy"), false, "考试入口预览不含体力消耗")
+
+## 饥饿越高越该吃饭；同时体力消耗加快。
+static func _hunger_scales_energy_cost(t) -> void:
+	t.eq(GameConfig.hunger_energy_multiplier(20.0), 1.0, "低饥饿无额外体力消耗")
+	t.eq(GameConfig.hunger_energy_multiplier(40.0), 1.0, "软阈值处仍无额外消耗")
+	t.ok(GameConfig.hunger_energy_multiplier(70.0) > 1.0, "偏饿时体力消耗加快")
+	t.ok(GameConfig.hunger_energy_multiplier(100.0) >= 1.5, "很饿时体力消耗明显加快")
+	t.eq(GameConfig.scale_energy_cost(20.0, 20.0), 20.0, "低饥饿按基础消耗")
+	t.ok(GameConfig.scale_energy_cost(20.0, 100.0) > 20.0, "高饥饿放大基础消耗")
+
+	var sys := ActionSystem.new()
+	var fed := GameState.new_run(324, ContentLoader.characters)
+	fed.location_id = "tea_shop"
+	fed.slot = 2
+	fed.player["hunger"] = 20.0
+	fed.player["energy"] = 100.0
+	var fed_before := float(fed.player["energy"])
+	var fed_result := sys.commit(fed, "tea_shop_shift")
+	t.eq(fed_result.get("ok", false), true, "吃饱时可以打工")
+	var fed_spent := fed_before - float(fed.player["energy"])
+
+	var hungry := GameState.new_run(325, ContentLoader.characters)
+	hungry.location_id = "tea_shop"
+	hungry.slot = 2
+	hungry.player["hunger"] = 95.0
+	hungry.player["energy"] = 100.0
+	var hungry_before := float(hungry.player["energy"])
+	var hungry_result := sys.commit(hungry, "tea_shop_shift")
+	t.eq(hungry_result.get("ok", false), true, "很饿时仍可打工")
+	var hungry_spent := hungry_before - float(hungry.player["energy"])
+	t.ok(hungry_spent > fed_spent, "很饿时打工掉的体力更多（%s > %s）" % [hungry_spent, fed_spent])
+
+	var preview := sys.preview(hungry, "tea_shop_shift")
+	t.ok(float(preview.get("cost", {}).get("energy", 0)) > 20.0, "预览体力消耗已按饥饿放大")
+
+static func _hunger_scales_daily_energy_drain(t) -> void:
+	var sched := ScheduleSystem.new()
+	var fed := GameState.new_run(326, ContentLoader.characters)
+	fed.slot = 3
+	fed.player["hunger"] = 20.0
+	fed.player["energy"] = 80.0
+	# 睡觉会先恢复体力，改用 auto_end_day 观察日结衰减更直接。
+	var fed_energy := float(fed.player["energy"])
+	sched.auto_end_day(fed)
+	# 日结：饥饿先 +12，再按新饥饿扣体力。初始 20→32，仍低于软阈值，倍率 1。
+	var fed_loss := fed_energy - float(fed.player["energy"])
+	# auto_end_day 还会因熬夜加疲劳等，体力变化 = 日结衰减（可能被其他项影响？）
+	# 只比较「高饥饿 vs 低饥饿」的日结体力降幅。
+	var hungry := GameState.new_run(327, ContentLoader.characters)
+	hungry.slot = 3
+	hungry.player["hunger"] = 85.0
+	hungry.player["energy"] = 80.0
+	var hungry_energy := float(hungry.player["energy"])
+	sched.auto_end_day(hungry)
+	var hungry_loss := hungry_energy - float(hungry.player["energy"])
+	t.ok(hungry_loss > fed_loss, "高饥饿日结掉的体力更多（%s > %s）" % [hungry_loss, fed_loss])
+
+## 开局介绍只在新游戏出现；读档默认视为已看过。
+static func _intro_shown_only_on_new_game(t) -> void:
+	GameFlow.start_new_game(324)
+	t.eq(GameFlow.should_show_intro(), true, "新开局应显示主线介绍")
+	GameFlow.mark_intro_seen()
+	t.eq(GameFlow.should_show_intro(), false, "看过后不再显示介绍")
+	var saved := GameFlow.state.to_dict()
+	GameFlow.state = GameState.from_dict(saved)
+	t.eq(GameFlow.should_show_intro(), false, "存档里已看过介绍则不重复弹出")
+	var old := GameState.new_run(325, ContentLoader.characters)
+	GameFlow.state = old
+	t.eq(GameFlow.should_show_intro(), false, "旧存档缺 intro_seen 视为已看过")
+
+## HUD 上展示的状态 / 属性都应有悬停说明。
+static func _field_tips_cover_hud_stats(t) -> void:
+	var fields := [
+		"money", "energy", "mood", "hunger", "fatigue", "health",
+		"luck", "trust", "exp",
+		"study", "math", "fitness", "communication", "skill", "responsibility",
+	]
+	for field in fields:
+		t.ok(GameConfig.field_tip(field) != "", "字段 %s 有悬停说明" % field)
+
+## 第 60 天先阶段总结，确认后再进结局（可花掉最后的经验）。
+static func _final_day_phase_before_ending(t) -> void:
+	var phase_hits := [0]
+	var ending_hits := [0]
+	var on_phase := func(_phase, _summary): phase_hits[0] += 1
+	var on_end := func(_summary): ending_hits[0] += 1
+	GameFlow.phase_summary_requested.connect(on_phase)
+	GameFlow.game_over.connect(on_end)
+	GameFlow.start_new_game(323)
+	GameFlow.state.day = 60
+	GameFlow.state.phase = 4
+	GameFlow.state.slot = 3
+	GameFlow.sleep_now()
+	t.eq(phase_hits[0], 1, "第 60 天先弹出阶段总结")
+	t.eq(ending_hits[0], 0, "确认阶段总结前不进结局")
+	t.eq(bool(GameFlow.state.meta.get("pending_game_over", false)), true, "标记待结算结局")
+	t.eq(GameFlow.is_awaiting_phase_continue(), true, "等待玩家确认阶段总结")
+	GameFlow.continue_after_phase_summary()
+	t.eq(ending_hits[0], 1, "确认阶段总结后进入结局")
+	t.eq(GameFlow.is_game_finished(), true, "结局后本局标记结束")
+	GameFlow.phase_summary_requested.disconnect(on_phase)
+	GameFlow.game_over.disconnect(on_end)

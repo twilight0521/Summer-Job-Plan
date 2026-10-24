@@ -44,9 +44,14 @@ func idle(state: GameState) -> Dictionary:
 		changes.append(state.add_player("fatigue", 2, "发呆"))
 		idle_message = "你发了一会儿呆，心情稍微放松了。"
 	else:
-		changes.append(state.add_player("energy", -2, "发呆"))
+		var hunger_now := float(state.player.get("hunger", 0))
+		var idle_energy := GameConfig.scale_energy_cost(2.0, hunger_now)
+		changes.append(state.add_player("energy", -idle_energy, "发呆"))
 		changes.append(state.add_player("fatigue", 1, "发呆"))
 		idle_message = "你漫无目的地消磨了一个时段。"
+		var note := GameConfig.hunger_energy_note(hunger_now)
+		if note != "" and idle_energy > 2.0:
+			idle_message += " " + note
 	var result := advance_slot(state)
 	var messages: Array = [idle_message]
 	messages.append_array(result.get("messages", []))
@@ -119,10 +124,12 @@ func _sleep_recovery(state: GameState) -> Dictionary:
 	}
 
 func _end_day(state: GameState) -> Dictionary:
-	# 每日自然变化
+	# 每日自然变化：先涨饥饿，再按当前饥饿结算体力衰减（越饿掉得越多）。
 	state.add_player("hunger", float(GameConfig.DAILY_DRIFT.get("hunger", 12)), "每日变化")
 	state.add_player("fatigue", float(GameConfig.DAILY_DRIFT.get("fatigue", 4)), "每日变化")
-	state.add_player("energy", float(GameConfig.DAILY_DRIFT.get("energy", -8)), "每日变化")
+	var base_energy_loss := absf(float(GameConfig.DAILY_DRIFT.get("energy", -8)))
+	var energy_loss := GameConfig.scale_energy_cost(base_energy_loss, float(state.player.get("hunger", 0)))
+	state.add_player("energy", -energy_loss, "每日变化")
 
 	# 连续锻炼中断
 	if not bool(state.get_flag("exercise_today")):
@@ -137,7 +144,7 @@ func _end_day(state: GameState) -> Dictionary:
 		if injury_days == 0:
 			state.set_flag("injury", "")
 
-	# 健康联动：极度饥饿 / 过劳
+	# 健康联动：极度饥饿 / 过劳（饥饿越高越该吃饭，拖着不吃会伤身体）
 	if float(state.player.get("hunger", 0)) >= 90:
 		state.add_player("health", -4, "长期饥饿")
 	if float(state.player.get("fatigue", 0)) >= 90:

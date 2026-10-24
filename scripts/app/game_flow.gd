@@ -59,10 +59,20 @@ func start_new_game(run_seed: int = -1) -> void:
 	else:
 		RandomSource.use_seed(run_seed)
 	state = GameState.new_run(run_seed, ContentLoader.characters)
+	state.meta["intro_seen"] = false
 	_reset_pending()
 	tutorial.reset()
 	state_changed.emit()
 	message.emit("暑假开始了。今天想做点什么？")
+
+## 新开局尚未看过主线介绍时返回 true；旧存档缺字段视为已看过。
+func should_show_intro() -> bool:
+	return state != null and not bool(state.meta.get("intro_seen", true))
+
+func mark_intro_seen() -> void:
+	if state == null:
+		return
+	state.meta["intro_seen"] = true
 
 func load_game(slot: String) -> bool:
 	var result := SaveRepository.load_slot(slot)
@@ -107,6 +117,18 @@ func resume_pending_event() -> bool:
 	event_requested.emit(view)
 	return true
 
+## 读档后恢复事件弹窗，或第 60 天待确认的阶段总结。
+func resume_pending_flow() -> bool:
+	if resume_pending_event():
+		return true
+	if state == null:
+		return false
+	if bool(state.meta.get("pending_game_over", false)):
+		_awaiting_phase_continue = true
+		phase_summary_requested.emit(state.phase, _build_phase_summary(state.phase))
+		return true
+	return false
+
 func _clear_stale_pending_event() -> bool:
 	message.emit("待处理事件已失效，已清除未完成的推进。")
 	_pending_event = {}
@@ -121,15 +143,29 @@ func _clear_stale_pending_event() -> bool:
 # 行动
 # ---------------------------------------------------------------------------
 
-func available_actions() -> Array:
+## 当前地点全部行动（含暂不可用），供 UI 灰显展示。
+func location_actions() -> Array:
 	if state == null:
 		return []
 	return action_system.actions_at(state, state.location_id)
+
+## 当前地点可立即执行的行动（自动化 / 主按钮仍用这个）。
+func available_actions() -> Array:
+	if state == null:
+		return []
+	var result: Array = []
+	for action_id in action_system.actions_at(state, state.location_id):
+		if action_system.is_available(state, str(action_id)):
+			result.append(action_id)
+	return result
 
 func action_preview(action_id: String) -> Dictionary:
 	if state == null:
 		return {}
 	return action_system.preview(state, action_id)
+
+func is_awaiting_phase_continue() -> bool:
+	return _awaiting_phase_continue
 
 func perform_action(action_id: String) -> Dictionary:
 	if state == null:
@@ -314,17 +350,22 @@ func move_to(location_id: String) -> void:
 	if not location_is_open(location_id):
 		message.emit("「%s」现在还没开门。" % loc.get("name", location_id))
 		return
-	if float(state.player.get("energy", 0)) < float(GameConfig.MOVE_ENERGY_COST):
+	var move_cost := GameConfig.scale_energy_cost(float(GameConfig.MOVE_ENERGY_COST), float(state.player.get("hunger", 0)))
+	if float(state.player.get("energy", 0)) < move_cost:
 		message.emit("体力不足，无法移动。")
 		return
 	var working := state.duplicate_state()
 	working.location_id = location_id
-	working.add_player("energy", -float(GameConfig.MOVE_ENERGY_COST), "移动")
+	working.add_player("energy", -move_cost, "移动")
 	if not SaveRepository.save_auto(working):
 		message.emit("保存失败，未能移动。")
 		return
 	state = working
-	message.emit("你来到了「%s」。" % loc.get("name", location_id))
+	var arrive := "你来到了「%s」。" % loc.get("name", location_id)
+	var hunger_note := GameConfig.hunger_energy_note(float(state.player.get("hunger", 0)))
+	if hunger_note != "" and move_cost > float(GameConfig.MOVE_ENERGY_COST):
+		arrive += " " + hunger_note
+	message.emit(arrive)
 	state_changed.emit()
 
 func location_is_open(location_id: String) -> bool:
@@ -333,7 +374,8 @@ func location_is_open(location_id: String) -> bool:
 		return false
 	var now := GameConfig.slot_minutes(state.slot)
 	var range_arr: Variant = loc.get("open_minutes", [0, 1440])
-	return now >= int(range_arr[0]) and now <= int(range_arr[1])
+	# 与行动营业时间一致：左闭右开，时段起点等于打烊分钟不算开放。
+	return now >= int(range_arr[0]) and now < int(range_arr[1])
 
 func rest_until_next_slot() -> void:
 	idle_until_next_slot()
@@ -400,10 +442,19 @@ func sleep_now() -> void:
 
 func _try_trigger_event(pool: Variant) -> bool:
 	var event: Dictionary = {}
-	if pool is Array and not pool.is_empty():
-		event = event_system.pick_event(state, pool)
-	else:
-		event = event_system.pick_event(state)
+	var effective_pool: Variant = pool
+	var trigger_chance := GameConfig.EVENT_CHANCE_POOLED
+	if not (pool is Array and not (pool as Array).is_empty()):
+		# 行动未指定 pool 时优先用地点氛围池，避免 locations.json 的 event_pool 成死配置。
+		var loc := ContentLoader.get_location(state.location_id)
+		var loc_pool: Variant = loc.get("event_pool", [])
+		if loc_pool is Array and not (loc_pool as Array).is_empty():
+			effective_pool = loc_pool
+			trigger_chance = GameConfig.EVENT_CHANCE_AMBIENT
+		else:
+			effective_pool = null
+			trigger_chance = GameConfig.EVENT_CHANCE_AMBIENT
+	event = event_system.pick_event(state, effective_pool, "", trigger_chance)
 	if event.is_empty():
 		return false
 	# 所有选项都被条件过滤掉时不弹窗，避免出现无法关闭的事件界面。
@@ -455,13 +506,17 @@ func _end_day(explicit_sleep: bool) -> bool:
 	return true
 
 func _after_day_end(result: Dictionary) -> void:
-	if result.get("game_over", false):
-		_trigger_ending()
-		return
 	var phase := int(result.get("phase_completed", 0))
+	# 第 60 天也先出阶段总结（可花经验解锁被动），确认后再进结局。
 	if phase > 0:
 		_awaiting_phase_continue = true
+		if result.get("game_over", false):
+			state.meta["pending_game_over"] = true
+			SaveRepository.save_auto(state)
 		phase_summary_requested.emit(phase, _build_phase_summary(phase))
+		return
+	if result.get("game_over", false):
+		_trigger_ending()
 		return
 	message.emit("新的一天开始了。")
 
@@ -469,6 +524,10 @@ func continue_after_phase_summary() -> void:
 	if not _awaiting_phase_continue:
 		return
 	_awaiting_phase_continue = false
+	if state != null and bool(state.meta.get("pending_game_over", false)):
+		state.meta.erase("pending_game_over")
+		_trigger_ending()
+		return
 	message.emit("第 %d 阶段结束，继续加油。" % state.phase)
 	state_changed.emit()
 

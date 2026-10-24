@@ -45,8 +45,16 @@ func is_eligible(state: GameState, event: Dictionary, location_id: String = "") 
 			if npc_loc != "" and npc_loc != check_loc:
 				return false
 
-	if bool(event.get("once", false)) and bool(state.get_flag(EVENT_FIRED_PREFIX + str(event.get("id", "")))):
+	var event_id := str(event.get("id", ""))
+	if bool(event.get("once", false)) and bool(state.get_flag(EVENT_FIRED_PREFIX + event_id)):
 		return false
+
+	# 可重复事件按冷却天数屏蔽，避免同一地点每次行动都弹同一条。
+	if not bool(event.get("once", false)):
+		var last_day := int(state.get_flag(GameConfig.EVENT_LAST_DAY_PREFIX + event_id))
+		var cooldown := int(event.get("cooldown_days", GameConfig.EVENT_REPEAT_COOLDOWN_DAYS))
+		if last_day > 0 and cooldown > 0 and state.day - last_day < cooldown:
+			return false
 
 	if not ConditionEvaluator.evaluate(event.get("conditions", {}), state):
 		return false
@@ -73,7 +81,14 @@ func eligible_events(state: GameState, location_id: String = "", pool: Variant =
 			result.append(event)
 	return result
 
-func pick_event(state: GameState, pool: Variant = null, category: String = "") -> Dictionary:
+## trigger_chance < 0 时按是否自带 pool 选用默认概率；先掷触发再加权抽取。
+func pick_event(state: GameState, pool: Variant = null, category: String = "", trigger_chance: float = -1.0) -> Dictionary:
+	var chance := trigger_chance
+	if chance < 0.0:
+		var has_pool := pool is Array and not (pool as Array).is_empty()
+		chance = GameConfig.EVENT_CHANCE_POOLED if has_pool else GameConfig.EVENT_CHANCE_AMBIENT
+	if chance < 1.0 and not RandomSource.chance(chance):
+		return {}
 	var candidates := eligible_events(state, state.location_id, pool, category)
 	if candidates.is_empty():
 		return {}
@@ -133,7 +148,10 @@ func resolve(state: GameState, event: Dictionary, choice_id: String) -> Dictiona
 	if chosen.has("extra"):
 		changes.append_array(EffectResolver.apply_array(state, chosen["extra"], "事件结果"))
 
-	state.set_flag(EVENT_FIRED_PREFIX + str(event.get("id", "")), true)
+	var resolved_id := str(event.get("id", ""))
+	state.set_flag(EVENT_FIRED_PREFIX + resolved_id, true)
+	# 记录最近触发日，供可重复事件冷却判定。
+	state.set_flag(GameConfig.EVENT_LAST_DAY_PREFIX + resolved_id, state.day)
 	var raw_npc: Variant = event.get("npc", "")
 	var npc_id: String = "" if raw_npc == null else str(raw_npc)
 	if npc_id != "":
@@ -141,7 +159,7 @@ func resolve(state: GameState, event: Dictionary, choice_id: String) -> Dictiona
 
 	state.log_entry({
 		"type": "event",
-		"id": event.get("id", ""),
+		"id": resolved_id,
 		"title": event.get("title", ""),
 		"choice": chosen.get("text", ""),
 	})

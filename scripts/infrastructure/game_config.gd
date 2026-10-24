@@ -37,6 +37,14 @@ const MOVE_ENERGY_COST := 2
 # 考试只允许在阶段末参加
 const PHASE_END_EXAM_DAYS := [14, 15, 29, 30, 44, 45, 59, 60]
 
+# 随机事件：有候选时也要先过触发概率，避免可重复事件每次行动必弹。
+# 行动自带 pool（闲逛 / NPC / 打工风险）略高；地点氛围池 / 全局池更低。
+const EVENT_CHANCE_AMBIENT := 0.32
+const EVENT_CHANCE_POOLED := 0.55
+# 非 once 事件默认冷却天数（可用事件 JSON 的 cooldown_days 覆盖）。
+const EVENT_REPEAT_COOLDOWN_DAYS := 2
+const EVENT_LAST_DAY_PREFIX := "event_last_day_"
+
 # 资源与属性上下限
 const CLAMPS := {
 	"money": [0, 999999],
@@ -85,6 +93,11 @@ const DAILY_DRIFT := {
 	"energy": -8,
 }
 
+# 饥饿越高越要吃饭；超过软阈值后，行动/移动/日结的体力消耗加快。
+# 饥饿 0–40：无额外消耗；100：最多 +60% 体力消耗。
+const HUNGER_ENERGY_SOFT := 40.0
+const HUNGER_ENERGY_EXTRA_MAX := 0.6
+
 const ATTRIBUTE_FIELDS := [
 	"study", "math", "fitness", "communication", "skill", "responsibility"
 ]
@@ -94,31 +107,110 @@ const RESOURCE_FIELDS := [
 	"muscle", "health", "luck", "trust"
 ]
 
-# 显示用中文名与图标（图标为占位字符，后续可替换为像素图）
+# 显示用中文名、图标与悬停说明（图标为占位字符，后续可替换为像素图）
 const FIELD_META := {
-	"money": {"name": "现金", "icon": "¥"},
-	"energy": {"name": "体力", "icon": "⚡"},
-	"mood": {"name": "心情", "icon": "☺"},
-	"hunger": {"name": "饥饿", "icon": "🍚"},
-	"fatigue": {"name": "疲劳", "icon": "💤"},
-	"muscle": {"name": "肌肉度", "icon": "💪"},
-	"health": {"name": "健康", "icon": "❤"},
-	"luck": {"name": "幸运", "icon": "🍀"},
-	"trust": {"name": "信任", "icon": "🤝"},
-	"study": {"name": "学习", "icon": "📖"},
-	"math": {"name": "数学", "icon": "➗"},
-	"fitness": {"name": "体能", "icon": "🏃"},
-	"communication": {"name": "沟通", "icon": "💬"},
-	"skill": {"name": "技能", "icon": "🔧"},
-	"responsibility": {"name": "责任感", "icon": "📌"},
-	"exp": {"name": "经验", "icon": "✦"},
+	"money": {
+		"name": "现金", "icon": "¥",
+		"tip": "买东西、交通和娱乐都靠它；部分事件和工作也有现金门槛。",
+	},
+	"energy": {
+		"name": "体力", "icon": "⚡",
+		"tip": "行动会消耗体力；过低时工作效率下降，也可能错过机会。",
+	},
+	"mood": {
+		"name": "心情", "icon": "☺",
+		"tip": "影响行动结果和事件选项；休息、社交和娱乐可以恢复。",
+	},
+	"hunger": {
+		"name": "饥饿", "icon": "🍚",
+		"tip": "数值越高越饿。饿了要吃饭，否则行动体力消耗会加快。",
+	},
+	"fatigue": {
+		"name": "疲劳", "icon": "💤",
+		"tip": "影响起床、工作效率与受伤概率；睡觉可以恢复。",
+	},
+	"muscle": {
+		"name": "肌肉度", "icon": "💪",
+		"tip": "搬砖等重体力工作的安全门槛；锻炼和体力活可提升。",
+	},
+	"health": {
+		"name": "健康", "icon": "❤",
+		"tip": "受伤、生病和长期熬夜会降低；过低会限制可做的事。",
+	},
+	"luck": {
+		"name": "幸运", "icon": "🍀",
+		"tip": "影响随机捡钱和好机会的概率；投机或欺骗可能降低它。",
+	},
+	"trust": {
+		"name": "信任", "icon": "🤝",
+		"tip": "影响父母、老板和街区人物是否愿意帮你；口碑结局也看它。",
+	},
+	"study": {
+		"name": "学习", "icon": "📖",
+		"tip": "影响升学、证书和家长期待类结果；图书馆自习可提升。",
+	},
+	"math": {
+		"name": "数学", "icon": "➗",
+		"tip": "会计考试与会计助理路线的核心属性；图书馆可专项练习。",
+	},
+	"fitness": {
+		"name": "体能", "icon": "🏃",
+		"tip": "影响搬运、外卖、工地等体力工作；锻炼可提升。",
+	},
+	"communication": {
+		"name": "沟通", "icon": "💬",
+		"tip": "影响服务业收入和 NPC 关系；打工与社交都能练到。",
+	},
+	"skill": {
+		"name": "技能", "icon": "🔧",
+		"tip": "影响维修、剪辑、编程等高收益工作；动手与专项练习可提升。",
+	},
+	"responsibility": {
+		"name": "责任感", "icon": "📌",
+		"tip": "影响连续出勤、合同和家庭事件；守时与扛事会涨。",
+	},
+	"exp": {
+		"name": "经验", "icon": "✦",
+		"tip": "阶段结算时用于解锁被动能力；工作与行动都会积累。",
+	},
 }
+
+func field_tip(field: String) -> String:
+	var meta: Dictionary = FIELD_META.get(field, {})
+	return str(meta.get("tip", ""))
 
 func clamp_field(field: String, value: float) -> float:
 	if CLAMPS.has(field):
 		var bounds: Array = CLAMPS[field]
 		return clampf(value, float(bounds[0]), float(bounds[1]))
 	return value
+
+## 饥饿 → 体力消耗倍率。饥饿越高越饿，同样行动掉更多体力。
+func hunger_energy_multiplier(hunger: float) -> float:
+	var span := 100.0 - HUNGER_ENERGY_SOFT
+	if span <= 0.0:
+		return 1.0
+	var t := clampf((float(hunger) - HUNGER_ENERGY_SOFT) / span, 0.0, 1.0)
+	return 1.0 + t * HUNGER_ENERGY_EXTRA_MAX
+
+## 把基础体力消耗（正数表示要扣多少）按当前饥饿放大。
+func scale_energy_cost(base_cost: float, hunger: float) -> float:
+	var base := absf(float(base_cost))
+	if base <= 0.0:
+		return 0.0
+	var mult := hunger_energy_multiplier(hunger)
+	if mult <= 1.0:
+		return base
+	return float(ceili(base * mult - 0.000001))
+
+func hunger_energy_note(hunger: float) -> String:
+	if float(hunger) < HUNGER_ENERGY_SOFT + 5.0:
+		return ""
+	if float(hunger) >= 90.0:
+		return "你很饿，体力消耗明显加快。"
+	if float(hunger) >= 70.0:
+		return "肚子饿了，体力消耗加快。"
+	return "有点饿，体力掉得稍快。"
 
 func slot_name(slot: int) -> String:
 	if slot >= 0 and slot < SLOT_NAMES.size():
